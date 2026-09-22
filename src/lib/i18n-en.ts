@@ -115,6 +115,7 @@ export const EN: Record<string, string> = {
   'сменить персону': 'change persona',
   'Справка и макросы': 'Help & macros',
   'Меню разделов': 'Sections menu',
+  'Вернуться в чат': 'Back to chat',
 
   // ── Библиотека ──
   'по имени': 'by name',

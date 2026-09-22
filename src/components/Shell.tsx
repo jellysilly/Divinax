@@ -4,7 +4,9 @@ import {
   ALargeSmall,
   BookMarked,
   Box,
+  ChevronLeft,
   ChevronRight,
+  Menu,
   CircleHelp,
   Languages,
   MessageCircle,
@@ -120,6 +122,26 @@ export function Footer() {
         </button>
       </div>
     </footer>
+  );
+}
+
+/** Верхняя панель разделов на телефоне: назад в чат, название, меню. */
+export function MobileTopBar() {
+  const tab = useStore((s) => s.tab);
+  const conn = useStore((s) => s.conn.status);
+  const item = NAV.find((n) => n.id === tab);
+  if (tab === 'chat') return null;
+  return (
+    <div className="m-topbar">
+      <button type="button" className="menu-btn" style={{ width: 44, height: 44 }} aria-label={tr('Вернуться в чат')} onClick={() => setTab('chat')}>
+        <ChevronLeft size={20} />
+      </button>
+      <h1 className="h2">{item ? tr(item.label) : ''}</h1>
+      <span className={`status-dot ${conn}`} title={tr('Статус')} />
+      <button type="button" className="menu-btn" style={{ width: 44, height: 44 }} aria-label={tr('Меню разделов')} onClick={() => setState({ mobileMenu: true })}>
+        <Menu size={20} />
+      </button>
+    </div>
   );
 }
 

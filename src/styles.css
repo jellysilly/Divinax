@@ -688,6 +688,7 @@ select option { background: #0c0c10; color: var(--text); }
 
 /* ── Мобильная шапка и меню ── */
 .m-only { display: none !important; }
+.m-topbar { display: none; }
 .m-menu { position: fixed; inset: 0; z-index: 40; background: var(--bg); display: flex; flex-direction: column; padding: 24px 18px; gap: 18px; overflow: auto; }
 .m-menu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .m-tile { border: 1px solid var(--line); border-radius: 14px; padding: 14px 6px 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; background: rgba(var(--panel-rgb), 0.8); min-height: 110px; }
@@ -769,9 +770,42 @@ select option { background: #0c0c10; color: var(--text); }
   .orn.wings { width: 150px; margin-left: -75px; bottom: -34px; }
   .orn.crest { display: none; }
   .main { padding: 18px 12px 12px; }
-  .page, .cols { flex-direction: column; overflow: auto; }
-  .cols > .panel { flex: none !important; min-height: auto !important; }
-  .panel { padding: 16px; }
+  /* разделы — одна колонка, листаются только по вертикали */
+  .main { overflow: hidden; }
+  .page, .cols { flex-direction: column; flex-wrap: nowrap !important; overflow-x: hidden; overflow-y: auto; gap: 14px; }
+  .cols > *, .page > * { flex: none !important; width: 100% !important; max-width: 100%; min-width: 0 !important; min-height: auto !important; }
+  .page > .chat-center { flex: 1 1 auto !important; min-height: 0 !important; }
+  .panel { padding: 16px; min-width: 0; max-width: 100%; }
+  .panel > *, .body > *, .field, .field > * { min-width: 0; max-width: 100%; }
+  .panel-head { flex-wrap: wrap; row-gap: 8px; }
+  .panel-head .actions { flex-wrap: wrap; }
+  .h2 { font-size: 19px; }
+  .panel .row { flex-wrap: wrap; }
+  .panel .row > .grow, .panel .row > .select-wrap.grow { flex: 1 1 160px; }
+  .seg { flex-wrap: wrap; border-radius: 16px; }
+  .seg button { flex: 1 1 auto; padding: 0 10px; }
+  .btn { white-space: normal; text-align: center; min-height: 40px; height: auto; padding-top: 6px; padding-bottom: 6px; line-height: 1.2; }
+  .btn.sm { min-height: 34px; }
+  .cols .list.scroll, .cols .persona-grid { max-height: 55vh; }
+  .cards-grid { grid-template-columns: 1fr; }
+  .persona-grid { grid-template-columns: repeat(2, 1fr); }
+  .bg-grid { grid-template-columns: 1fr 1fr; }
+  .color-grid { grid-template-columns: 1fr; }
+  .lb-toolbar { gap: 8px; margin-bottom: 12px; }
+  .lb-toolbar > .select-wrap, .lb-toolbar > .grow { width: 100% !important; flex: 1 1 100% !important; }
+  .lb-toolbar > .btn.primary { flex: 1 1 100%; }
+  .entry-row { grid-template-columns: 46px 16px 14px 1fr 30px; gap: 8px; padding: 0 8px; }
+  .entry-body { padding: 4px 10px 12px; }
+  .entry-body > .row { flex-wrap: wrap; }
+  .entry-grid, .entry-body .grid3 { grid-template-columns: 1fr 1fr !important; }
+  .entry-grid > .field:first-child { grid-column: 1 / -1; }
+  .char-hero .row { justify-content: center; }
+  .big-name { font-size: 22px; }
+  .slider-top { font-size: 13.5px; }
+  .ext-card { min-height: 0; }
+  .prompt-bar { grid-template-columns: 1fr 56px; }
+  .m-topbar { display: flex; align-items: center; gap: 12px; flex: none; margin-bottom: 14px; }
+  .m-topbar .h2 { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hero { height: 200px; }
   .hero-info { margin-top: -64px; padding: 0 4px 0 10px; gap: 14px; }
   .hero-avatar { width: 88px; height: 88px; }
