@@ -1,6 +1,7 @@
 import { tr } from '../lib/i18n';
 import { useShallow } from 'zustand/react/shallow';
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ArrowRightToLine,
   BookMarked,
@@ -504,6 +505,7 @@ function Composer({ chat }: { chat: Chat }) {
   const enterSends = useStore((s) => s.ui.enterSends);
   const menuOpen = useStore((s) => s.chatMenu);
   const [wand, setWand] = useState(false);
+  const closeWand = useCallback(() => setWand(false), []);
   const [images, setImages] = useState<string[]>([]);
   const [listening, setListening] = useState<(() => void) | null>(null);
   const ta = useRef<HTMLTextAreaElement>(null);
@@ -569,7 +571,7 @@ function Composer({ chat }: { chat: Chat }) {
       <div className="composer-box">
         <div style={{ position: 'relative' }}>
           <IconBtn bare size="lg" icon={<WandSparkles size={18} />} label={tr('Меню расширений')} onClick={() => setWand(!wand)} />
-          {wand && <WandMenu chat={chat} onClose={() => setWand(false)} onAttach={attach} onMic={mic} listening={Boolean(listening)} />}
+          {wand && <WandMenu chat={chat} onClose={closeWand} onAttach={attach} onMic={mic} listening={Boolean(listening)} />}
         </div>
         {images.length > 0 && (
           <div className="attach-preview">
@@ -642,26 +644,64 @@ function MenuItem({ icon, children, onClick, danger }: { icon: ReactNode; childr
 }
 
 function useOutsideClose(onClose: () => void) {
-  const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const h = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node) && !(e.target as HTMLElement).closest('.menu-btn, .icon-btn'))
-        onClose();
+    const h = (e: PointerEvent) => {
+      // внутри меню, шторки или по кнопкам-переключателям — не закрываем
+      if ((e.target as HTMLElement).closest?.('.popmenu, .sheet, .drawer-backdrop, .menu-btn, .icon-btn')) return;
+      onClose();
     };
     const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    setTimeout(() => document.addEventListener('mousedown', h), 0);
+    const t = setTimeout(() => document.addEventListener('pointerdown', h), 0);
     document.addEventListener('keydown', k);
     return () => {
-      document.removeEventListener('mousedown', h);
+      clearTimeout(t);
+      document.removeEventListener('pointerdown', h);
       document.removeEventListener('keydown', k);
     };
   }, [onClose]);
-  return ref;
+}
+
+/** Меню: на компьютере — всплывающий список, на телефоне — шторка снизу. */
+function PopMenu({
+  title,
+  onClose,
+  className = '',
+  style,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  className?: string;
+  style?: React.CSSProperties;
+  children: ReactNode;
+}) {
+  useOutsideClose(onClose);
+  const host = document.querySelector('.app') ?? document.body;
+  return (
+    <>
+      <div role="menu" aria-label={title} className={`popmenu scroll ${className}`} style={style}>
+        <div className="panel-star" style={{ position: 'absolute', top: -8, left: '50%', marginLeft: -8 }}>
+          <Star />
+        </div>
+        {children}
+      </div>
+      {createPortal(
+        <div className="m-only sheet-host">
+          <div className="drawer-backdrop" onClick={onClose} />
+          <Panel className="sheet scroll" title={title} actions={<IconBtn icon={<X size={16} />} label={tr('Закрыть')} onClick={onClose} />}>
+            <div className="col" style={{ gap: 0 }}>
+              {children}
+            </div>
+          </Panel>
+        </div>,
+        host,
+      )}
+    </>
+  );
 }
 
 function ChatMenu({ chat }: { chat: Chat }) {
-  const close = () => setState({ chatMenu: false });
-  const ref = useOutsideClose(close);
+  const close = useCallback(() => setState({ chatMenu: false }), []);
   const items = (
     <>
       <MenuItem icon={<Plus size={17} />} onClick={() => (close(), startNewChat(chat.ownerType, chat.ownerId))}>
@@ -703,26 +743,9 @@ function ChatMenu({ chat }: { chat: Chat }) {
     </>
   );
   return (
-    <>
-      <div ref={ref} role="menu" aria-label={tr('Меню чата')} className="popmenu scroll">
-        <div className="panel-star" style={{ position: 'absolute', top: -8, left: '50%', marginLeft: -8 }}>
-          <Star />
-        </div>
-        {items}
-      </div>
-      <div className="m-only">
-        <div className="drawer-backdrop" onClick={close} />
-        <Panel
-          className="sheet scroll"
-          title={tr('Меню чата')}
-          actions={<IconBtn icon={<X size={16} />} label={tr('Закрыть')} onClick={close} />}
-        >
-          <div className="col" style={{ gap: 0 }}>
-            {items}
-          </div>
-        </Panel>
-      </div>
-    </>
+    <PopMenu title={tr('Меню чата')} onClose={close}>
+      {items}
+    </PopMenu>
   );
 }
 
@@ -768,15 +791,13 @@ function WandMenu({
   listening: boolean;
 }) {
   const ext = useStore((s) => s.ext.enabled);
-  const ref = useOutsideClose(onClose);
   const lastChar = [...chat.messages].reverse().find((m) => !m.isUser);
   const go = (fn: () => void) => () => {
     onClose();
     fn();
   };
   return (
-    <div ref={ref} role="menu" className="popmenu left" style={{ bottom: 58, width: 280 }}>
-      <div className="menu-title">{tr('Быстрые действия')}</div>
+    <PopMenu title={tr('Быстрые действия')} onClose={onClose} className="left" style={{ bottom: 58, width: 280 }}>
       <MenuItem icon={<Paperclip size={17} />} onClick={go(onAttach)}>
         {tr('Прикрепить изображение')}
       </MenuItem>
@@ -814,6 +835,6 @@ function WandMenu({
       <MenuItem icon={<BookMarked size={17} />} onClick={go(() => openModal('help'))}>
         {tr('Команды и макросы')}
       </MenuItem>
-    </div>
+    </PopMenu>
   );
 }
