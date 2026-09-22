@@ -158,6 +158,9 @@ export function InterfacePage() {
               onChange={(v) => setUi({ language: v ? 'en' : 'ru' })}
             />
           </Field>
+          <div className="hint" style={{ marginTop: 'auto', paddingTop: 8 }}>
+            Divinax {__DX_VERSION__}
+          </div>
         </div>
       </Panel>
 

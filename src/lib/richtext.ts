@@ -108,20 +108,40 @@ function sanitize(html: string): string {
   return String(DOMPurify.sanitize(html, PURIFY));
 }
 
-/** Разметка текста с HTML: блоки ``` — как код, остальное — renderMixed. */
+/** Язык блока ``` и его содержимое. */
+function fence(part: string): { lang: string; body: string } {
+  const nl = part.indexOf('\n');
+  const head = nl >= 0 ? part.slice(0, nl).trim() : '';
+  if (nl >= 0 && /^[\w+-]*$/.test(head)) return { lang: head.toLowerCase(), body: part.slice(nl + 1) };
+  return { lang: '', body: part };
+}
+
+/** Блок ```html (или без языка) с разметкой показываем как HTML, а не как код — так делают карточки для Tavern Helper. */
+const isHtmlFence = (lang: string, body: string) => /^(?:html?|xhtml|xml|svg|)$/.test(lang) && HAS_TAG.test(body);
+
+/** Разметка текста с HTML: блоки ``` — как код (кроме HTML-блоков), остальное — renderMixed. */
 function renderFenced(src: string): string {
   return src
     .split(/```/)
     .map((part, i) => {
-      if (i % 2 === 1) {
-        const nl = part.indexOf('\n');
-        const body = nl >= 0 && /^[\w+-]*$/.test(part.slice(0, nl)) ? part.slice(nl + 1) : part;
-        return `<pre><code>${escText(body.replace(/\n$/, ''))}</code></pre>`;
-      }
-      return renderMixed(part);
+      if (i % 2 === 0) return renderMixed(part);
+      const { lang, body } = fence(part);
+      if (isHtmlFence(lang, body)) return renderMixed(body.trim());
+      return `<pre><code>${escText(body.replace(/\n$/, ''))}</code></pre>`;
     })
     .join('');
 }
+
+/** Текст без обычных блоков кода — по нему решаем, есть ли в сообщении HTML. */
+const withoutCode = (src: string) =>
+  src
+    .split(/```/)
+    .map((part, i) => {
+      if (i % 2 === 0) return part;
+      const { lang, body } = fence(part);
+      return isHtmlFence(lang, body) ? body : '';
+    })
+    .join('');
 
 /** Похоже на HTML-документ или код, который надо исполнять. */
 const isRunnable = (code: string) => /<(?:!doctype|html|head|body|script)\b/i.test(code);
@@ -134,8 +154,8 @@ export function renderRich(text: string, opts: { html: boolean; js: boolean; str
 
   if (opts.js) {
     // ```html … ``` с документом или скриптом — отдельный фрейм (как в Tavern Helper)
-    src = src.replace(/```[\w-]*\n([\s\S]*?)```/g, (whole, body: string) => {
-      if (!isRunnable(body)) return whole;
+    src = src.replace(/```([\w+-]*)[ \t]*\n([\s\S]*?)```/g, (whole, lang: string, body: string) => {
+      if (!isRunnable(body) || !isHtmlFence(lang.toLowerCase(), body)) return whole;
       frames.push(body);
       return FRAME_MARK(frames.length - 1);
     });
@@ -146,7 +166,7 @@ export function renderRich(text: string, opts: { html: boolean; js: boolean; str
     }
   }
 
-  const hasHtml = HAS_TAG.test(src.replace(/```[\s\S]*?```/g, ''));
+  const hasHtml = HAS_TAG.test(withoutCode(src));
   // метки фреймов превращаем в <div data-dx-frame> до очистки: DOMPurify вырезает \u0000
   const marks = (h: string) => h.replace(/\u0000DXFRAME(\d+)\u0000/g, (_m, i: string) => FRAME_DIV(Number(i)));
   const html = hasHtml ? sanitize(marks(renderFenced(src))) : marks(renderMessage(src));
