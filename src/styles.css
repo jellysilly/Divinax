@@ -442,7 +442,9 @@ select option { background: #0c0c10; color: var(--text); }
 .hero-info { display: flex; align-items: flex-end; gap: 22px; margin-top: -58px; padding: 0 6px 0 24px; position: relative; flex: none; }
 .hero-avatar { position: relative; width: 104px; height: 104px; flex: none; }
 .hero-avatar .ring { position: absolute; inset: -7px; border: 1px solid var(--line-strong); border-radius: 50%; }
-.hero-avatar .avatar { width: 104px; height: 104px; font-size: 44px; box-shadow: none; }
+/* размер задаёт контейнер: у Avatar он inline, поэтому !important — иначе на телефоне аватар вылезает из обводки */
+.hero-avatar .avatar { width: 100% !important; height: 100% !important; font-size: 44px; box-shadow: none; }
+.hero-avatar > button { display: block; width: 100%; height: 100%; padding: 0; }
 .hero-avatar .spark { position: absolute; }
 .hero-name { margin: 0; font-family: var(--serif); font-size: 32px; font-weight: 600; line-height: 1; color: var(--strong); text-shadow: 0 0 18px rgba(var(--glow-rgb), 0.25); }
 .hero-links { display: flex; align-items: center; gap: 6px; padding-bottom: 4px; }
@@ -655,7 +657,7 @@ select option { background: #0c0c10; color: var(--text); }
 /* Карточка персонажа */
 .char-hero { display: flex; gap: 28px; align-items: flex-start; }
 .char-hero .hero-avatar { width: 116px; height: 116px; margin: 8px; }
-.char-hero .hero-avatar .avatar { width: 116px; height: 116px; cursor: pointer; }
+.char-hero .hero-avatar .avatar { cursor: pointer; }
 .big-name { font-family: var(--serif); font-size: 28px; font-weight: 600; height: 50px; }
 
 /* ── Модальные окна ── */
@@ -812,7 +814,7 @@ select option { background: #0c0c10; color: var(--text); }
   .hero { height: 200px; }
   .hero-info { margin-top: -64px; padding: 0 4px 0 10px; gap: 14px; }
   .hero-avatar { width: 88px; height: 88px; }
-  .hero-avatar .avatar { width: 88px; height: 88px; }
+  .hero-avatar .avatar { font-size: 38px; }
   .hero-name { font-size: 22px; }
   .hero-links { width: 100%; padding: 0; align-items: center; }
   .hero-links .btn { flex: 1; min-width: 0; padding: 0 8px; }
