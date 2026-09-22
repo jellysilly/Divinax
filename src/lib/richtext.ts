@@ -199,12 +199,16 @@ function collectFonts(): string {
   return fontCss;
 }
 
+/** vh внутри фрейма — это высота самого фрейма: блок на 100vh не дал бы ему сжаться. Считаем vh от экрана, как Tavern Helper. */
+const fixVh = (code: string) => code.replace(/(\d*\.?\d+)vh\b/g, (_m, n: string) => `calc(var(--dx-vh) * ${n})`);
+
 export function frameDocument(code: string, id: string): string {
+  code = fixVh(code);
   const cs = getComputedStyle(document.documentElement);
   const v = (k: string, d: string) => cs.getPropertyValue(k).trim() || d;
   const fs = parseFloat(v('--fs', '1')) || 1;
   const base = `<meta charset="utf-8"><meta name="color-scheme" content="dark"><base target="_blank"><style>${collectFonts()}
-:root{color-scheme:dark}
+:root{color-scheme:dark;--dx-vh:${(window.innerHeight / 100).toFixed(2)}px}
 html,body{margin:0;padding:0;background:transparent;overflow:hidden}
 body{color:${v('--text', '#ebe9ee')};font-family:'Cormorant Garamond',Georgia,serif;font-size:${Math.round(19 * fs)}px;line-height:1.5;overflow-wrap:anywhere}
 a{color:inherit}img,video{max-width:100%;height:auto}
@@ -212,9 +216,18 @@ a{color:inherit}img,video{max-width:100%;height:auto}
   const bridge = `<script>(function(){
 var ID=${JSON.stringify(id)},seq=0,wait={};
 function post(m){m.__dx=ID;parent.postMessage(m,'*')}
-function size(){var d=document.documentElement,b=document.body;post({type:'height',h:Math.ceil(Math.max(d.scrollHeight,b?b.scrollHeight:0,d.getBoundingClientRect().height))})}
-try{new ResizeObserver(size).observe(document.documentElement)}catch(e){}
-addEventListener('load',size);setTimeout(size,30);setTimeout(size,400);setTimeout(size,1500);
+var last=-1,raf=0;
+function px(v){return parseFloat(v)||0}
+function measure(){var b=document.body;if(!b)return 0;var bottom=0;
+ try{var rg=document.createRange();rg.selectNodeContents(b);var rr=rg.getBoundingClientRect();if(rr.height)bottom=rr.bottom}catch(e){}
+ for(var i=0;i<b.children.length;i++){var el=b.children[i],cs=getComputedStyle(el);if(cs.display==='none'||cs.position==='fixed')continue;var r=el.getBoundingClientRect();if(r.height||r.width)bottom=Math.max(bottom,r.bottom+px(cs.marginBottom))}
+ var bs=getComputedStyle(b);return Math.ceil(bottom+px(bs.paddingBottom)+px(bs.borderBottomWidth)+px(bs.marginBottom)+(window.scrollY||0))}
+function size(){raf=0;var h=measure();if(h!==last){last=h;post({type:'height',h:h})}}
+function later(){if(!raf)raf=requestAnimationFrame(size)}
+try{var ro=new ResizeObserver(later);ro.observe(document.documentElement);addEventListener('DOMContentLoaded',function(){ro.observe(document.body)})}catch(e){}
+try{new MutationObserver(later).observe(document,{subtree:true,childList:true,attributes:true,characterData:true})}catch(e){}
+['toggle','click','transitionend','animationend','load'].forEach(function(t){addEventListener(t,function(){later();setTimeout(later,350)},true)});
+setTimeout(size,30);setTimeout(size,400);setTimeout(size,1500);
 addEventListener('message',function(e){var d=e.data;if(d&&d.__dxReply===ID&&wait[d.seq]){wait[d.seq](d.value);delete wait[d.seq]}});
 function call(n,a){return new Promise(function(r){var s=++seq;wait[s]=r;post({type:'call',name:n,args:a,seq:s})})}
 var api={
