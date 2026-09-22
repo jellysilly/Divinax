@@ -2,7 +2,7 @@ import { setLang, tr } from './lib/i18n';
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { activeChat, setState, toast, useStore } from './store';
-import { Footer, Header, MobileMenu, Ornaments } from './components/Shell';
+import { Footer, Header, MobileMenu, MobileTopBar, Ornaments } from './components/Shell';
 import { Modals } from './components/Modals';
 import { ChatPage } from './pages/Chat';
 import { ApiPage } from './pages/Api';
@@ -145,6 +145,7 @@ export default function App() {
       <Ornaments />
       <Header />
       <main className="main">
+        <MobileTopBar />
         {tab === 'chat' && <ChatPage />}
         {tab === 'api' && <ApiPage />}
         {tab === 'generation' && <GenerationPage />}
