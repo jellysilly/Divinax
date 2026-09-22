@@ -1,10 +1,11 @@
 import { tr } from '../lib/i18n';
 import { useState } from 'react';
-import { Copy, Download, Image as ImageIcon, Plus, Save, Trash2, Upload } from 'lucide-react';
+import { Copy, Crop as CropIcon, Download, Image as ImageIcon, Plus, Save, Trash2, Upload } from 'lucide-react';
 import { activeChat, chatOwnerName, currentPersona, getState, setState, toast, updateChat, upsertPersona, useStore } from '../store';
 import type { Persona } from '../types';
+import { PERSONA_CROP, cropImage, pickAndCrop } from '../components/Cropper';
 import { Avatar, Divider, Field, IconBtn, NumInput, Panel, SearchInput, Select, Switch } from '../components/ui';
-import { download, estimateTokens, pickFiles, plural, readDataUrl, shrinkImage, uid } from '../lib/util';
+import { download, estimateTokens, pickFiles, plural, uid } from '../lib/util';
 
 function blankPersona(name = tr('Новая персона')): Persona {
   return { id: uid(), name, description: '', position: 'in_prompt', depth: 2, role: 'system', createdAt: Date.now() };
@@ -132,8 +133,8 @@ function PersonaEditor({ p }: { p: Persona }) {
             type="button"
             title={tr('Сменить аватар')}
             onClick={async () => {
-              const [f] = await pickFiles('image/*');
-              if (f) setD({ ...d, avatar: await shrinkImage(await readDataUrl(f), 512) });
+              const url = await pickAndCrop(PERSONA_CROP);
+              if (url) setD({ ...d, avatar: url });
             }}
           >
             <Avatar src={d.avatar} name={d.name} size={108} glow />
@@ -147,12 +148,24 @@ function PersonaEditor({ p }: { p: Persona }) {
                 type="button"
                 className="btn sm"
                 onClick={async () => {
-                  const [f] = await pickFiles('image/*');
-                  if (f) setD({ ...d, avatar: await shrinkImage(await readDataUrl(f), 512) });
+                  const url = await pickAndCrop(PERSONA_CROP);
+                  if (url) setD({ ...d, avatar: url });
                 }}
               >
                 <ImageIcon size={15} /> {tr('Сменить аватар')}
               </button>
+              {d.avatar && (
+                <button
+                  type="button"
+                  className="btn sm"
+                  onClick={async () => {
+                    const url = await cropImage(d.avatar!, PERSONA_CROP);
+                    if (url) setD({ ...d, avatar: url });
+                  }}
+                >
+                  <CropIcon size={15} /> {tr('Обрезать')}
+                </button>
+              )}
               <button
                 type="button"
                 className="btn sm"

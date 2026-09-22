@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { activeChat, setState, toast, useStore } from './store';
 import { Footer, Header, MobileMenu, MobileTopBar, Ornaments } from './components/Shell';
 import { Modals } from './components/Modals';
+import { CropperHost } from './components/Cropper';
 import { ChatPage } from './pages/Chat';
 import { ApiPage } from './pages/Api';
 import { GenerationPage } from './pages/Generation';
@@ -159,6 +160,7 @@ export default function App() {
       <Footer />
       {mobileMenu && <MobileMenu />}
       <Modals />
+      <CropperHost />
       <Toasts />
     </div>
   );

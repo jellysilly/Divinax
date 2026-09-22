@@ -1,7 +1,7 @@
 import { tr } from '../lib/i18n';
 import { useShallow } from 'zustand/react/shallow';
 import { useState } from 'react';
-import { Download, FolderOpen, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
+import { Crop as CropIcon, Download, FolderOpen, Link2, Pencil, Unlink, Plus, Trash2, Upload, X } from 'lucide-react';
 import {
   activeChat,
   activePreset,
@@ -12,6 +12,7 @@ import {
   setState,
   toast,
   updateChat,
+  updatePreset,
   upsertCharacter,
   upsertGroup,
   upsertLorebook,
@@ -19,6 +20,7 @@ import {
 } from '../store';
 import type { ExtensionSettings, Group, QuickReply, RegexScript } from '../types';
 import { Avatar, BgThumb, Divider, Field, IconBtn, LazyInput, LazyTextarea, Modal, NumInput, Select, Seg, Slider, Switch } from './ui';
+import { AVATAR_CROP, BANNER_CROP, cropImage, pickAndCrop } from './Cropper';
 import { MACRO_HELP } from '../lib/macros';
 import { COMMANDS } from '../lib/slash';
 import { deleteChat, exportChat, openChat, openOwner, renameChat, startNewChat } from '../lib/chats';
@@ -33,7 +35,7 @@ import { PromptEditor } from '../pages/Generation';
 import { exportCharacter } from '../pages/Characters';
 import { runGeneration, summarizeChat } from '../lib/generate';
 import { generateImage } from '../lib/images';
-import { download, fmtDay, fmtNum, pickFiles, plural, readDataUrl, shrinkImage, uid } from '../lib/util';
+import { download, fmtDay, fmtNum, pickFiles, plural, readDataUrl, safeName, shrinkImage, uid } from '../lib/util';
 
 export function Modals() {
   const modal = useStore((s) => s.modal);
@@ -71,7 +73,7 @@ export function Modals() {
     case 'importUrl':
       return <ImportUrlModal />;
     case 'ext':
-      return <ExtModal id={String(p)} />;
+      return <ExtModal id={String(p).split(':')[0]} arg={String(p).split(':')[1]} />;
     case 'exportChar':
       return <ExportCharModal id={String(p)} />;
     case 'charAdvanced':
@@ -397,8 +399,14 @@ function GalleryModal({ ownerId }: { ownerId: string }) {
           <div key={i} className="bg-tile" style={{ padding: 4 }}>
             <img src={src} alt="" style={{ aspectRatio: '1', cursor: 'zoom-in' }} onClick={() => setState({ modal: { kind: 'lightbox', payload: src } })} />
             <div className="row" style={{ justifyContent: 'center', gap: 4 }}>
-              <IconBtn size="sm" bare icon={<span style={{ fontSize: 11 }}>{tr('аватар')}</span>} label={tr('Сделать аватаром')} onClick={() => upsertCharacter({ ...getState().characters[ch.id], avatar: src })} />
-              <IconBtn size="sm" bare icon={<span style={{ fontSize: 11 }}>{tr('обложка')}</span>} label={tr('Сделать обложкой чата')} onClick={() => upsertCharacter({ ...getState().characters[ch.id], banner: src })} />
+              <IconBtn size="sm" bare icon={<span style={{ fontSize: 11 }}>{tr('аватар')}</span>} label={tr('Сделать аватаром')} onClick={async () => {
+                const url = await cropImage(src, AVATAR_CROP);
+                if (url) upsertCharacter({ ...getState().characters[ch.id], avatar: url });
+              }} />
+              <IconBtn size="sm" bare icon={<span style={{ fontSize: 11 }}>{tr('обложка')}</span>} label={tr('Сделать обложкой чата')} onClick={async () => {
+                const url = await cropImage(src, BANNER_CROP);
+                if (url) upsertCharacter({ ...getState().characters[ch.id], banner: url });
+              }} />
               {ch.gallery.includes(src) && (
                 <IconBtn size="sm" bare className="danger" icon={<X size={13} />} label={tr('Убрать')} onClick={() => upsertCharacter({ ...getState().characters[ch.id], gallery: ch.gallery.filter((x) => x !== src) })} />
               )}
@@ -698,12 +706,23 @@ function CharAdvancedModal({ id }: { id: string }) {
               type="button"
               className="btn sm grow"
               onClick={async () => {
-                const [f] = await pickFiles('image/*');
-                if (f) set({ banner: await shrinkImage(await readDataUrl(f), 1600) });
+                const url = await pickAndCrop(BANNER_CROP);
+                if (url) set({ banner: url });
               }}
             >
               <Upload size={14} /> {tr('Загрузить')}
             </button>
+            {ch.banner && (
+              <IconBtn
+                size="sm"
+                icon={<CropIcon size={14} />}
+                label={tr('Обрезать обложку')}
+                onClick={async () => {
+                  const url = await cropImage(ch.banner!, BANNER_CROP);
+                  if (url) set({ banner: url });
+                }}
+              />
+            )}
             {ch.banner && <IconBtn size="sm" className="danger" icon={<X size={14} />} label={tr('Убрать обложку')} onClick={() => set({ banner: undefined })} />}
           </div>
         </Field>
@@ -725,7 +744,7 @@ function CreatorNotesModal({ id }: { id: string }) {
 
 // ───────────── Настройки расширений ─────────────
 
-function ExtModal({ id }: { id: string }) {
+function ExtModal({ id, arg }: { id: string; arg?: string }) {
   const info = EXTENSIONS.find((e) => e.id === id);
   const ext = useStore((s) => s.ext);
   const setExt = <K extends keyof ExtensionSettings>(k: K, v: Partial<ExtensionSettings[K]>) =>
@@ -894,7 +913,7 @@ function ExtModal({ id }: { id: string }) {
       body = <ExpressionsSettings />;
       break;
     case 'regex':
-      body = <RegexSettings />;
+      body = <RegexSettings initial={arg === 'preset' ? 'preset' : 'global'} />;
       break;
     case 'quickReplies':
       body = <QuickReplySettings />;
@@ -922,10 +941,31 @@ function ExtModal({ id }: { id: string }) {
   );
 }
 
-function RegexSettings() {
-  const list = useStore((s) => s.ext.regex);
-  const setList = (regex: RegexScript[]) => setState((s) => ({ ext: { ...s.ext, regex } }));
+type RegexScope = 'global' | 'preset';
+
+const setGlobalRegex = (fn: (l: RegexScript[]) => RegexScript[]) => setState((s) => ({ ext: { ...s.ext, regex: fn(s.ext.regex) } }));
+const setPresetRegex = (fn: (l: RegexScript[]) => RegexScript[]) => updatePreset((p) => ({ ...p, regex: fn(p.regex ?? []) }));
+
+function RegexSettings({ initial }: { initial: RegexScope }) {
+  const [scope, setScope] = useState<RegexScope>(initial);
+  const globalList = useStore((s) => s.ext.regex);
+  const preset = useStore(activePreset);
+  const presetList = preset.regex ?? [];
+  const list = scope === 'global' ? globalList : presetList;
+  const setList = (regex: RegexScript[]) => (scope === 'global' ? setGlobalRegex : setPresetRegex)(() => regex);
   const upd = (id: string, p: Partial<RegexScript>) => setList(list.map((r) => (r.id === id ? { ...r, ...p } : r)));
+  /** Перенести скрипт между глобальными и пресетом. */
+  const moveScript = (r: RegexScript) => {
+    if (scope === 'global') {
+      setGlobalRegex((l) => l.filter((x) => x.id !== r.id));
+      setPresetRegex((l) => [...l, r]);
+      toast(tr('«{0}» привязан к пресету «{1}»', r.name, tr(preset.name)), 'success');
+    } else {
+      setPresetRegex((l) => l.filter((x) => x.id !== r.id));
+      setGlobalRegex((l) => [...l, r]);
+      toast(tr('«{0}» теперь глобальный', r.name), 'success');
+    }
+  };
   const [test, setTest] = useState('');
   const cardOn = useStore((s) => s.ext.cardRegex !== false);
   const chatChar = useStore((s) => {
@@ -946,6 +986,19 @@ function RegexSettings() {
           {tr('В карточке «{0}»: {1}', chatChar.name, fromCard.map((r) => r.name).join(', '))}
         </div>
       )}
+      <Seg
+        value={scope}
+        onChange={setScope}
+        options={[
+          { value: 'global', label: tr('Глобальные ({0})', globalList.length) },
+          { value: 'preset', label: tr('Пресет «{0}» ({1})', tr(preset.name), presetList.length) },
+        ]}
+      />
+      <div className="sub">
+        {scope === 'global'
+          ? tr('Работают всегда. Кнопкой со скрепкой скрипт можно привязать к текущему пресету.')
+          : tr('Работают, только пока выбран пресет «{0}»: сменили пресет — сменились и регексы. Сохраняются и экспортируются вместе с пресетом.', tr(preset.name))}
+      </div>
       <div className="row">
         <button type="button" className="btn sm" onClick={() => setList([...list, blankRegex()])}>
           <Plus size={14} /> {tr('Скрипт')}
@@ -965,7 +1018,7 @@ function RegexSettings() {
         >
           <Upload size={14} /> {tr('Импорт (ST)')}
         </button>
-        <button type="button" className="btn sm" onClick={() => download('regex.json', JSON.stringify(list.map(regexToST), null, 2))}>
+        <button type="button" className="btn sm" onClick={() => download(scope === 'global' ? 'regex.json' : `regex-${safeName(preset.name)}.json`, JSON.stringify(list.map(regexToST), null, 2))}>
           <Download size={14} /> {tr('Экспорт')}
         </button>
       </div>
@@ -975,6 +1028,12 @@ function RegexSettings() {
             <div className="row">
               <Switch checked={r.enabled} onChange={(v) => upd(r.id, { enabled: v })} />
               <LazyInput className="input sm grow" value={r.name} onCommit={(v) => upd(r.id, { name: v })} />
+              <IconBtn
+                size="sm"
+                icon={scope === 'global' ? <Link2 size={14} /> : <Unlink size={14} />}
+                label={scope === 'global' ? tr('Привязать к пресету «{0}»', tr(preset.name)) : tr('Отвязать от пресета (сделать глобальным)')}
+                onClick={() => moveScript(r)}
+              />
               <IconBtn size="sm" className="danger" icon={<Trash2 size={14} />} label={tr('Удалить')} onClick={() => setList(list.filter((x) => x.id !== r.id))} />
             </div>
             <div className="grid2">

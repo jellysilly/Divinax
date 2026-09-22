@@ -115,12 +115,29 @@ export function cardRegex(ch?: Character): RegexScript[] {
   return list;
 }
 
-/** Все активные скрипты для персонажа: глобальные + из карточки. */
+/** Регексы выбранного пресета. */
+export function presetRegex(s: { presets: { id: string; regex?: RegexScript[] }[]; activePresetId: string }): RegexScript[] {
+  const p = s.presets.find((x) => x.id === s.activePresetId) ?? s.presets[0];
+  return p?.regex ?? NONE;
+}
+
+const NONE: RegexScript[] = [];
+
+/** Все активные скрипты: глобальные, затем пресета, затем из карточки персонажа (порядок как в SillyTavern). */
 export function scriptsFor(
-  s: { ext: { enabled: Record<string, boolean>; regex: RegexScript[]; cardRegex?: boolean }; characters: Record<string, Character> },
+  s: {
+    ext: { enabled: Record<string, boolean>; regex: RegexScript[]; cardRegex?: boolean };
+    characters: Record<string, Character>;
+    presets: { id: string; regex?: RegexScript[] }[];
+    activePresetId: string;
+  },
   charId?: string,
 ): RegexScript[] {
-  if (!s.ext.enabled.regex) return [];
-  const own = s.ext.cardRegex === false ? [] : cardRegex(charId ? s.characters[charId] : undefined);
-  return own.length ? [...s.ext.regex, ...own] : s.ext.regex;
+  if (!s.ext.enabled.regex) return NONE;
+  return combineRegex(s.ext.regex, presetRegex(s), s.ext.cardRegex === false ? NONE : cardRegex(charId ? s.characters[charId] : undefined));
+}
+
+export function combineRegex(global: RegexScript[], preset: RegexScript[], card: RegexScript[]): RegexScript[] {
+  if (!preset.length && !card.length) return global;
+  return [...global, ...preset, ...card];
 }

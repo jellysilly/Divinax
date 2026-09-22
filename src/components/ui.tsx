@@ -351,13 +351,18 @@ export function Modal({
   footer?: ReactNode;
   wide?: boolean;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    const onKey = (e: KeyboardEvent) => {
+      // Esc закрывает только верхнее окно (например, обрезку поверх редактора)
+      const all = document.querySelectorAll('.overlay');
+      if (e.key === 'Escape' && all[all.length - 1] === ref.current) onClose();
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
   return (
-    <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div ref={ref} className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <section className={`panel modal ${wide ? 'wide' : ''}`} role="dialog" aria-modal="true">
         <div className="panel-star">
           <Star />

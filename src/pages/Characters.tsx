@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
+  Crop as CropIcon,
   Download,
   FileText,
   MessageCircle,
@@ -14,14 +15,17 @@ import {
   SlidersHorizontal,
   Star as StarIcon,
   Trash2,
+  Upload,
+  X,
 } from 'lucide-react';
 import { openModal, setState, setTab, toast, upsertCharacter, upsertLorebook, useStore } from '../store';
 import type { Character } from '../types';
 import { Library } from '../components/Library';
+import { AVATAR_CROP, cropImage, pickAndCrop } from '../components/Cropper';
 import { Avatar, Field, IconBtn, LazyInput, LazyTextarea, Panel, Star, TagInput } from '../components/ui';
 import { characterToJson, exportCharacterPng } from '../lib/cards';
 import { openOwner } from '../lib/chats';
-import { download, estimateTokens, fmtNum, pickFiles, plural, readDataUrl, safeName, shrinkImage, uid } from '../lib/util';
+import { download, estimateTokens, fmtNum, plural, safeName, uid } from '../lib/util';
 
 export function CharactersPage() {
   const characters = useStore((s) => s.characters);
@@ -68,8 +72,13 @@ function CharEditor({ ch }: { ch: Character }) {
   const total = permanent + estimateTokens(ch.first_mes + ch.mes_example);
 
   const changeAvatar = async () => {
-    const [f] = await pickFiles('image/*');
-    if (f) set({ avatar: await shrinkImage(await readDataUrl(f), 768) });
+    const url = await pickAndCrop(AVATAR_CROP);
+    if (url) set({ avatar: url });
+  };
+  const recropAvatar = async () => {
+    if (!ch.avatar) return;
+    const url = await cropImage(ch.avatar, AVATAR_CROP);
+    if (url) set({ avatar: url });
   };
 
   return (
@@ -85,6 +94,7 @@ function CharEditor({ ch }: { ch: Character }) {
     >
       <div className="body scroll grow" style={{ paddingRight: 4 }}>
         <div className="char-hero">
+          <div className="avatar-edit">
           <div className="hero-avatar" style={{ width: 116, height: 116, margin: 12 }}>
             <div className="ring" />
             <button type="button" onClick={() => void changeAvatar()} title={tr('Сменить аватар')} style={{ borderRadius: '50%' }}>
@@ -102,6 +112,12 @@ function CharEditor({ ch }: { ch: Character }) {
             <span className="spark" style={{ top: '50%', right: -18, marginTop: -9 }}>
               <Star size={18} />
             </span>
+          </div>
+            <div className="row" style={{ gap: 6 }}>
+              <IconBtn size="sm" icon={<Upload size={14} />} label={tr('Загрузить аватар')} onClick={() => void changeAvatar()} />
+              {ch.avatar && <IconBtn size="sm" icon={<CropIcon size={14} />} label={tr('Обрезать аватар')} onClick={() => void recropAvatar()} />}
+              {ch.avatar && <IconBtn size="sm" className="danger" icon={<X size={14} />} label={tr('Убрать аватар')} onClick={() => set({ avatar: undefined })} />}
+            </div>
           </div>
           <div className="col grow" style={{ gap: 12, minWidth: 0, width: '100%' }}>
             <div className="row wrap" style={{ alignItems: 'flex-end', gap: 14 }}>

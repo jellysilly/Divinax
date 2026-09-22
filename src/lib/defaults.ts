@@ -91,6 +91,7 @@ export const DEFAULT_PRESET: GenPreset = {
   newExampleChatPrompt: '[Example Chat]',
   groupNudgePrompt: "[Write the next reply only as {{char}}.]",
   squashSystem: false,
+  regex: [],
 };
 
 export const DEFAULT_STORY_STRING = `{{#if system}}{{system}}

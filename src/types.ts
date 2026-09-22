@@ -305,6 +305,7 @@ export interface GenPreset {
   newExampleChatPrompt: string;
   groupNudgePrompt: string;
   squashSystem: boolean;
+  regex: RegexScript[]; // регексы, привязанные к пресету: работают, пока он выбран
 }
 
 // ── Формат ──

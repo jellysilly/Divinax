@@ -1,8 +1,9 @@
 import { tr } from '../lib/i18n';
 import { useState } from 'react';
-import { Download, GripVertical, Pencil, Plus, Save, Trash2, Upload } from 'lucide-react';
+import { Download, GripVertical, Pencil, Plus, Regex, Save, Trash2, Upload } from 'lucide-react';
 import { activePreset, openModal, setState, toast, updatePreset, useStore } from '../store';
-import type { GenPreset, PromptItem } from '../types';
+import type { GenPreset, PromptItem, RegexScript } from '../types';
+import { regexFromST } from '../lib/regex';
 import { Divider, Field, IconBtn, NumInput, Panel, Select, Slider, Switch } from '../components/ui';
 import { DEFAULT_PRESET } from '../lib/defaults';
 import { download, estimateTokens, fmtNum, pickFiles, safeName, uid } from '../lib/util';
@@ -75,6 +76,9 @@ export function GenerationPage() {
             }}
           />
         </div>
+        <button type="button" className="btn sm" style={{ alignSelf: 'flex-start' }} onClick={() => openModal('ext', 'regex:preset')} title={tr('Регексы работают, только пока выбран этот пресет')}>
+          <Regex size={14} /> {tr('Регексы пресета: {0}', (preset.regex ?? []).length)}
+        </button>
         <div className="body scroll grow" style={{ paddingRight: 6 }}>
           <div className="grid2" style={{ gap: 10 }}>
             <Switch label={tr('Стриминг ответа')} checked={preset.stream} onChange={(v) => set({ stream: v })} />
@@ -354,7 +358,7 @@ function promptsFromST(j: any): PromptItem[] | null {
 }
 
 function presetFromST(j: any, fallback: string): GenPreset {
-  if (j.prompts && !j.prompt_order && j.maxContext) return { ...DEFAULT_PRESET, ...j, id: uid() };
+  if (j.prompts && !j.prompt_order && j.maxContext) return { ...DEFAULT_PRESET, ...j, regex: Array.isArray(j.regex) ? j.regex.map((r: RegexScript) => ({ ...r, id: uid() })) : [], id: uid() };
   const prompts = promptsFromST(j) ?? DEFAULT_PRESET.prompts;
   return {
     ...DEFAULT_PRESET,
@@ -384,6 +388,7 @@ function presetFromST(j: any, fallback: string): GenPreset {
     newExampleChatPrompt: j.new_example_chat_prompt ?? DEFAULT_PRESET.newExampleChatPrompt,
     groupNudgePrompt: j.group_nudge_prompt ?? DEFAULT_PRESET.groupNudgePrompt,
     squashSystem: j.squash_system_messages ?? false,
+    regex: Array.isArray(j.extensions?.regex_scripts) ? j.extensions.regex_scripts.map(regexFromST) : [],
   };
 }
 

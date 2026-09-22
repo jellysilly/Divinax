@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import type { Message } from '../types';
 import { getState, openModal, setState, toast, updateChat, updateMessage, useStore, userName } from '../store';
-import { applyRegex, cardRegex } from '../lib/regex';
+import { applyRegex, cardRegex, combineRegex, presetRegex } from '../lib/regex';
 import { substituteMacros } from '../lib/macros';
 import { RichText } from './RichText';
 import { branchChat } from '../lib/chats';
@@ -39,6 +39,7 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
   const regexOn = useStore((s) => s.ext.enabled.regex);
   const globalRegex = useStore((s) => s.ext.regex);
   const cardRegexOn = useStore((s) => s.ext.cardRegex !== false);
+  const presetScripts = useStore(presetRegex);
   const ownerChar = useStore((s) => (s.chats[chatId]?.ownerType === 'char' ? s.chats[chatId].ownerId : undefined));
   const character = useStore((s) => s.characters[m.charId ?? ownerChar ?? '']);
   const uname = useStore((s) => userName(s, s.chats[chatId]));
@@ -60,12 +61,12 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
   const shown = useMemo(() => {
     let out = text;
     if (regexOn) {
-      const scripts = cardRegexOn ? [...globalRegex, ...cardRegex(character)] : globalRegex;
+      const scripts = combineRegex(globalRegex, presetScripts, cardRegexOn ? cardRegex(character) : []);
       out = applyRegex(scripts, out, { isUser: m.isUser, target: 'display' });
     }
     if (out.includes('{{')) out = substituteMacros(out, { char: character?.name ?? m.name, user: uname });
     return out;
-  }, [text, regexOn, globalRegex, cardRegexOn, character, m.isUser, m.name, uname]);
+  }, [text, regexOn, globalRegex, presetScripts, cardRegexOn, character, m.isUser, m.name, uname]);
 
   const avatar = m.isUser ? personaAvatar : charAvatar;
   const tokens = m.tokens ?? estimateTokens(m.text);
