@@ -1,5 +1,5 @@
 import { tr } from './i18n';
-import type { RegexScript } from '../types';
+import type { Character, RegexScript } from '../types';
 import { parseRegex, uid } from './util';
 
 export function blankRegex(): RegexScript {
@@ -54,8 +54,14 @@ export function applyRegex(
     const re = compile(r);
     if (!re) continue;
     out = out.replace(re, (...args) => {
-      const groups = args.slice(0, -2) as string[];
-      return r.replace.replace(/\$(\d+|&)/g, (_m, g: string) => (g === '&' ? groups[0] : groups[+g] ?? ''));
+      // аргументы: совпадение, группы…, позиция, строка[, именованные группы]
+      const end = args.findIndex((a, i) => i > 0 && typeof a === 'number');
+      const groups = args.slice(0, end < 0 ? -2 : end) as string[];
+      const named = (typeof args[args.length - 1] === 'object' ? args[args.length - 1] : {}) as Record<string, string>;
+      return r.replace
+        .replace(/\{\{match\}\}/gi, groups[0] ?? '')
+        .replace(/\$<([^>]+)>/g, (_m, k: string) => named?.[k] ?? '')
+        .replace(/\$(\d+|&)/g, (_m, g: string) => (g === '&' ? groups[0] : groups[+g] ?? ''));
     });
   }
   return out;
@@ -94,4 +100,27 @@ export function regexToST(r: RegexScript) {
     minDepth: r.minDepth,
     maxDepth: r.maxDepth,
   };
+}
+
+// Регексы, встроенные в карточку персонажа (extensions.regex_scripts, как в SillyTavern)
+const cardCache = new WeakMap<Character, RegexScript[]>();
+
+export function cardRegex(ch?: Character): RegexScript[] {
+  if (!ch) return [];
+  const hit = cardCache.get(ch);
+  if (hit) return hit;
+  const raw = (ch.extensions as Record<string, unknown>)?.regex_scripts;
+  const list = Array.isArray(raw) ? raw.filter((x) => x && typeof x === 'object').map((x) => ({ ...regexFromST(x), id: 'card:' + String((x as any).id ?? Math.random()) })) : [];
+  cardCache.set(ch, list);
+  return list;
+}
+
+/** Все активные скрипты для персонажа: глобальные + из карточки. */
+export function scriptsFor(
+  s: { ext: { enabled: Record<string, boolean>; regex: RegexScript[]; cardRegex?: boolean }; characters: Record<string, Character> },
+  charId?: string,
+): RegexScript[] {
+  if (!s.ext.enabled.regex) return [];
+  const own = s.ext.cardRegex === false ? [] : cardRegex(charId ? s.characters[charId] : undefined);
+  return own.length ? [...s.ext.regex, ...own] : s.ext.regex;
 }

@@ -141,6 +141,14 @@ export function InterfacePage() {
             <Switch label={tr('Enter отправляет сообщение')} checked={ui.enterSends} onChange={(v) => setUi({ enterSends: v })} />
             <Switch label={tr('Подтверждать удаление')} checked={ui.confirmDelete} onChange={(v) => setUi({ confirmDelete: v })} />
             <Switch label={tr('Мерцание звёзд и свечей')} checked={ui.twinkle} onChange={(v) => setUi({ twinkle: v })} />
+            <Switch label={tr('HTML и CSS в сообщениях')} hint={tr('плашки, статусы, таблицы из ответов и регексов')} checked={ui.renderHtml} onChange={(v) => setUi({ renderHtml: v })} />
+            <Switch
+              label={tr('JavaScript в сообщениях')}
+              hint={tr('скрипты работают в песочнице без доступа к ключам и данным')}
+              checked={ui.runScripts}
+              disabled={!ui.renderHtml}
+              onChange={(v) => setUi({ runScripts: v })}
+            />
           </div>
           <Field label={tr('Язык интерфейса')}>
             <Switch

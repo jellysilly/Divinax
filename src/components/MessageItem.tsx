@@ -16,9 +16,10 @@ import {
   X,
 } from 'lucide-react';
 import type { Message } from '../types';
-import { getState, openModal, setState, toast, updateChat, updateMessage, useStore } from '../store';
-import { renderMessage } from '../lib/markdown';
-import { applyRegex } from '../lib/regex';
+import { getState, openModal, setState, toast, updateChat, updateMessage, useStore, userName } from '../store';
+import { applyRegex, cardRegex } from '../lib/regex';
+import { substituteMacros } from '../lib/macros';
+import { RichText } from './RichText';
 import { branchChat } from '../lib/chats';
 import { swipe } from '../lib/generate';
 import { speak } from '../lib/speech';
@@ -35,7 +36,12 @@ interface Props {
 
 function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
   const ui = useStore((s) => s.ui);
-  const regex = useStore((s) => (s.ext.enabled.regex ? s.ext.regex : null));
+  const regexOn = useStore((s) => s.ext.enabled.regex);
+  const globalRegex = useStore((s) => s.ext.regex);
+  const cardRegexOn = useStore((s) => s.ext.cardRegex !== false);
+  const ownerChar = useStore((s) => (s.chats[chatId]?.ownerType === 'char' ? s.chats[chatId].ownerId : undefined));
+  const character = useStore((s) => s.characters[m.charId ?? ownerChar ?? '']);
+  const uname = useStore((s) => userName(s, s.chats[chatId]));
   const charAvatar = useStore((s) => (m.charId ? s.characters[m.charId]?.avatar : undefined));
   const personaAvatar = useStore((s) => (m.isUser ? (m.personaId ? s.personas[m.personaId]?.avatar : undefined) ?? m.avatar : undefined));
   const streaming = useStore((s) => (s.streaming?.messageId === m.id ? s.streaming : null));
@@ -50,10 +56,16 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
   const useTranslation = translateOn && m.translation && !showOriginal && !streaming;
   const text = streaming ? streaming.text : useTranslation ? m.translation! : m.text;
   const reasoning = streaming ? streaming.reasoning : m.reasoning;
-  const html = useMemo(() => {
-    const shown = regex ? applyRegex(regex, text, { isUser: m.isUser, target: 'display' }) : text;
-    return renderMessage(shown);
-  }, [text, regex, m.isUser]);
+  // Показ: регексы «только отображение» (включая регексы карточки) и макросы {{char}}/{{user}}
+  const shown = useMemo(() => {
+    let out = text;
+    if (regexOn) {
+      const scripts = cardRegexOn ? [...globalRegex, ...cardRegex(character)] : globalRegex;
+      out = applyRegex(scripts, out, { isUser: m.isUser, target: 'display' });
+    }
+    if (out.includes('{{')) out = substituteMacros(out, { char: character?.name ?? m.name, user: uname });
+    return out;
+  }, [text, regexOn, globalRegex, cardRegexOn, character, m.isUser, m.name, uname]);
 
   const avatar = m.isUser ? personaAvatar : charAvatar;
   const tokens = m.tokens ?? estimateTokens(m.text);
@@ -151,7 +163,7 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
             <i />
           </span>
         ) : (
-          <div className={`msg-text ${streaming ? 'cursor' : ''}`} dangerouslySetInnerHTML={{ __html: html }} />
+          <RichText text={shown} streaming={Boolean(streaming)} />
         )}
 
         {m.images && m.images.length > 0 && (

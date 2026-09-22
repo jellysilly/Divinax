@@ -24,7 +24,7 @@ import { COMMANDS } from '../lib/slash';
 import { deleteChat, exportChat, openChat, openOwner, renameChat, startNewChat } from '../lib/chats';
 import { buildPrompt } from '../lib/prompt';
 import { characterFromJson, readPngTextChunks } from '../lib/cards';
-import { blankRegex, regexFromST, regexToST } from '../lib/regex';
+import { blankRegex, cardRegex, regexFromST, regexToST } from '../lib/regex';
 import { voices } from '../lib/speech';
 import { LANGS, translateMessage } from '../lib/extras';
 import { EXPRESSIONS } from '../lib/defaults';
@@ -927,8 +927,25 @@ function RegexSettings() {
   const setList = (regex: RegexScript[]) => setState((s) => ({ ext: { ...s.ext, regex } }));
   const upd = (id: string, p: Partial<RegexScript>) => setList(list.map((r) => (r.id === id ? { ...r, ...p } : r)));
   const [test, setTest] = useState('');
+  const cardOn = useStore((s) => s.ext.cardRegex !== false);
+  const chatChar = useStore((s) => {
+    const c = activeChat(s);
+    return c?.ownerType === 'char' ? s.characters[c.ownerId] : undefined;
+  });
+  const fromCard = cardRegex(chatChar);
   return (
     <>
+      <Switch
+        label={tr('Регексы из карточек персонажей')}
+        hint={tr('скрипты, встроенные в карточку (как в SillyTavern), работают только в чатах этого персонажа')}
+        checked={cardOn}
+        onChange={(v) => setState((s) => ({ ext: { ...s.ext, cardRegex: v } }))}
+      />
+      {chatChar && fromCard.length > 0 && (
+        <div className="sub">
+          {tr('В карточке «{0}»: {1}', chatChar.name, fromCard.map((r) => r.name).join(', '))}
+        </div>
+      )}
       <div className="row">
         <button type="button" className="btn sm" onClick={() => setList([...list, blankRegex()])}>
           <Plus size={14} /> {tr('Скрипт')}
@@ -964,7 +981,7 @@ function RegexSettings() {
               <Field label={tr('Найти')} hint={tr('/регулярка/флаги или текст')}>
                 <LazyInput className="input mono" value={r.find} onCommit={(v) => upd(r.id, { find: v })} />
               </Field>
-              <Field label={tr('Заменить на')} hint={tr('$1, $2 — группы')}>
+              <Field label={tr('Заменить на')} hint={tr('$1, $2 — группы, {{match}} — всё совпадение; можно HTML')}>
                 <LazyInput className="input mono" value={r.replace} onCommit={(v) => upd(r.id, { replace: v })} />
               </Field>
             </div>

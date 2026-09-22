@@ -726,6 +726,16 @@ export const EN: Record<string, string> = {
   'Резервная копия восстановлена': 'Backup restored',
   'Настройки импортированы': 'Settings imported',
 
+  'HTML и CSS в сообщениях': 'HTML and CSS in messages',
+  'плашки, статусы, таблицы из ответов и регексов': 'panels, status blocks and tables from replies and regex',
+  'JavaScript в сообщениях': 'JavaScript in messages',
+  'скрипты работают в песочнице без доступа к ключам и данным': 'scripts run in a sandbox with no access to your keys or data',
+  'HTML/JS-блок появится после завершения ответа': 'The HTML/JS block will appear when the reply is finished',
+  'Регексы из карточек персонажей': 'Regex from character cards',
+  'скрипты, встроенные в карточку (как в SillyTavern), работают только в чатах этого персонажа': 'scripts embedded in a card (as in SillyTavern) apply only to that character\'s chats',
+  'В карточке «{0}»: {1}': 'In the "{0}" card: {1}',
+  '$1, $2 — группы, {{match}} — всё совпадение; можно HTML': '$1, $2 — groups, {{match}} — whole match; HTML allowed',
+
   // ── Лорбук ──
   'Название лорбука': 'Lorebook name',
   'Новый мир': 'New world',

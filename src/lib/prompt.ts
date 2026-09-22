@@ -5,7 +5,7 @@ import { activePreset, currentPersona, type State } from '../store';
 import type { ChatMsg } from './api';
 import { currentModel } from './api';
 import { renderStoryString, substituteMacros, type MacroEnv } from './macros';
-import { applyRegex } from './regex';
+import { applyRegex, scriptsFor } from './regex';
 import { estimateTokens } from './util';
 import { scanWorldInfo, type WIResult } from './worldinfo';
 
@@ -133,7 +133,7 @@ export function buildPrompt(s: State, o: BuildOptions): BuiltPrompt {
   }
   const histText = (m: Message, depth: number) => {
     let t = m.text;
-    if (regexOn) t = applyRegex(s.ext.regex, t, { isUser: m.isUser, depth, target: 'prompt' });
+    if (regexOn) t = applyRegex(scriptsFor(s, m.charId ?? char?.id), t, { isUser: m.isUser, depth, target: 'prompt' });
     return sub(t);
   };
 

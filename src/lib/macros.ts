@@ -111,6 +111,7 @@ export function substituteMacros(text: string, env: MacroEnv): string {
         newline: '\n',
         trim: '\u0000TRIM\u0000',
         noop: '',
+        random: Math.random().toString(36).slice(2, 10), // {{random}} без вариантов — случайный id
         time: now.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' }),
         date: now.toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' }),
         weekday: now.toLocaleDateString(locale(), { weekday: 'long' }),

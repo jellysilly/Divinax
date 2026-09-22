@@ -384,6 +384,8 @@ export interface UiSettings {
   messageStyle: 'flat' | 'bubbles' | 'document';
   avatarStyle: 'round' | 'square' | 'portrait';
   avatarPosition: 'top' | 'side' | 'none';
+  renderHtml: boolean; // HTML и CSS в сообщениях
+  runScripts: boolean; // JavaScript в сообщениях (в песочнице)
   showTimestamps: boolean;
   showNumbers: boolean;
   showTokens: boolean;
@@ -447,6 +449,7 @@ export interface ExtensionSettings {
   stt: { lang: string; autoSend: boolean };
   translate: { target: string; inputTarget: string; mode: 'none' | 'display' | 'input' | 'both' };
   regex: RegexScript[];
+  cardRegex: boolean; // применять регексы из карточек персонажей
   quickReplies: { activeSet: string; sets: QuickReplySet[] };
   imageGen: { provider: 'pollinations'; width: number; height: number; stylePrefix: string };
   expressions: { sprites: Record<string, Record<string, string>> };

@@ -5,7 +5,7 @@ import { activePreset, currentPersona, getState, setState, toast, updateChat, up
 import { generate } from './api';
 import { makeMessage } from './chats';
 import { buildPrompt, cleanResponse, speakingCharacter, type GenKind } from './prompt';
-import { applyRegex } from './regex';
+import { applyRegex, scriptsFor } from './regex';
 import { estimateTokens } from './util';
 import { speak } from './speech';
 import { classifyEmotion, translateMessage, translateText } from './extras';
@@ -87,7 +87,7 @@ export async function sendMessage(raw: string, opts: { generate?: boolean; asSys
     }
   }
   if (text) {
-    if (s.ext.enabled.regex) text = applyRegex(s.ext.regex, text, { isUser: true, target: 'store' });
+    if (s.ext.enabled.regex) text = applyRegex(scriptsFor(s, chat.ownerType === 'char' ? chat.ownerId : undefined), text, { isUser: true, target: 'store' });
     const persona = currentPersona(s, chat);
     const msg = makeMessage({
       text,
@@ -229,7 +229,7 @@ export async function runGeneration(
     let text = cleaned.text;
     const reasoning = [res.reasoning, cleaned.reasoning].filter(Boolean).join('\n');
     const st = getState();
-    if (st.ext.enabled.regex && kind !== 'quiet') text = applyRegex(st.ext.regex, text, { isUser: kind === 'impersonate', target: 'store' });
+    if (st.ext.enabled.regex && kind !== 'quiet') text = applyRegex(scriptsFor(st, char?.id), text, { isUser: kind === 'impersonate', target: 'store' });
     const genTime = Date.now() - startedAt;
 
     if (kind === 'quiet') {

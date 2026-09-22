@@ -349,6 +349,8 @@ export const DEFAULT_UI: UiSettings = {
   messageStyle: 'flat',
   avatarStyle: 'round',
   avatarPosition: 'side',
+  renderHtml: true,
+  runScripts: true,
   showTimestamps: true,
   showNumbers: true,
   showTokens: true,
@@ -407,6 +409,7 @@ export const DEFAULT_EXTENSIONS: ExtensionSettings = {
   stt: { lang: 'ru-RU', autoSend: false },
   translate: { target: 'ru', inputTarget: 'en', mode: 'display' },
   regex: [],
+  cardRegex: true,
   quickReplies: {
     activeSet: 'scenes',
     sets: [

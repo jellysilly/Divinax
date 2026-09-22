@@ -51,6 +51,8 @@ const server = createServer((req, res) => {
   res.writeHead(200, {
     'Content-Type': TYPES[ext] || 'application/octet-stream',
     // хэшированные ассеты кэшируем надолго, index.html — нет
+    // шрифты и картинки нужны и HTML-фреймам сообщений (у них нулевой origin)
+    'Access-Control-Allow-Origin': '*',
     'Cache-Control': file.includes(`${join(root, 'assets')}`) ? 'public, max-age=31536000, immutable' : 'no-cache',
   });
   createReadStream(file).pipe(res);
