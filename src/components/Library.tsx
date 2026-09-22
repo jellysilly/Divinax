@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useMemo, useState } from 'react';
 import { ArrowUpDown, Link, Plus, Star as StarIcon, Tag, Upload, UserPlus, Users } from 'lucide-react';
 import { chatsOf, openModal, setState, upsertCharacter, useStore } from '../store';
@@ -83,36 +84,36 @@ export function Library({
   };
 
   return (
-    <Panel title="Библиотека" className={className} style={style}>
+    <Panel title={tr('Библиотека')} className={className} style={style}>
       <Seg
         large
         value={mode}
         onChange={setMode}
         options={[
-          { value: 'chars', label: 'Персонажи' },
-          { value: 'groups', label: 'Группы' },
+          { value: 'chars', label: tr('Персонажи') },
+          { value: 'groups', label: tr('Группы') },
         ]}
       />
       <div className="row" style={{ justifyContent: 'space-between' }}>
-        <IconBtn size="lg" icon={<Plus size={17} />} label="Создать персонажа" onClick={create} />
+        <IconBtn size="lg" icon={<Plus size={17} />} label={tr('Создать персонажа')} onClick={create} />
         <IconBtn
           size="lg"
           icon={<Upload size={17} />}
-          label="Импорт карточки (PNG, JSON)"
+          label={tr('Импорт карточки (PNG, JSON)')}
           onClick={async () => importFiles(await pickFiles('.png,.json', true))}
         />
-        <IconBtn size="lg" icon={<Link size={17} />} label="Импорт по ссылке" onClick={() => openModal('importUrl')} />
-        <IconBtn size="lg" icon={<UserPlus size={17} />} label="Создать групповой чат" onClick={() => openModal('group', { id: '' })} />
-        <IconBtn size="lg" icon={<Tag size={17} />} label="Управление тегами" onClick={() => openModal('tags')} />
-        <IconBtn size="lg" icon={<ArrowUpDown size={17} />} label={`Сортировка: ${SORT_LABEL[sort]}`} onClick={cycleSort} />
+        <IconBtn size="lg" icon={<Link size={17} />} label={tr('Импорт по ссылке')} onClick={() => openModal('importUrl')} />
+        <IconBtn size="lg" icon={<UserPlus size={17} />} label={tr('Создать групповой чат')} onClick={() => openModal('group', { id: '' })} />
+        <IconBtn size="lg" icon={<Tag size={17} />} label={tr('Управление тегами')} onClick={() => openModal('tags')} />
+        <IconBtn size="lg" icon={<ArrowUpDown size={17} />} label={tr('Сортировка: {0}', tr(SORT_LABEL[sort]))} onClick={cycleSort} />
       </div>
-      <SearchInput value={q} onChange={setQ} placeholder="Поиск персонажей и тегов" />
+      <SearchInput value={q} onChange={setQ} placeholder={tr('Поиск персонажей и тегов')} />
       <div className="row wrap" style={{ gap: 6 }}>
         <button type="button" className={`chip ${filter === '__all' ? 'on' : ''}`} onClick={() => setFilter('__all')}>
-          Все
+          {tr('Все')}
         </button>
         <button type="button" className={`chip ${filter === '__fav' ? 'on' : ''}`} onClick={() => setFilter('__fav')}>
-          <StarIcon size={13} /> Избранное
+          <StarIcon size={13} /> {tr('Избранное')}
         </button>
         {topTags.map((t) => (
           <button key={t} type="button" className={`chip ${filter === t ? 'on' : ''}`} onClick={() => setFilter(filter === t ? '__all' : t)}>
@@ -125,17 +126,17 @@ export function Library({
           charList.map((c) => <CharRow key={c.id} c={c} on={selectedId === c.id} onClick={() => onPickChar(c.id)} />)}
         {mode === 'chars' && !charList.length && (
           <div className="empty">
-            {Object.keys(characters).length ? 'Никого не найдено' : 'Библиотека пуста. Создайте персонажа или перетащите PNG-карточку в окно.'}
+            {Object.keys(characters).length ? tr('Никого не найдено') : tr('Библиотека пуста. Создайте персонажа или перетащите PNG-карточку в окно.')}
           </div>
         )}
         {mode === 'groups' &&
           groupList.map((g) => <GroupRow key={g.id} g={g} on={selectedId === g.id} onClick={() => onPickGroup(g.id)} />)}
         {mode === 'groups' && !groupList.length && (
           <div className="empty">
-            Групповых чатов пока нет.
+            {tr('Групповых чатов пока нет.')}
             <br />
             <button type="button" className="btn sm" style={{ marginTop: 12 }} onClick={() => openModal('group', { id: '' })}>
-              <Users size={15} /> Создать группу
+              <Users size={15} /> {tr('Создать группу')}
             </button>
           </div>
         )}
@@ -151,13 +152,13 @@ function CharRow({ c, on, onClick }: { c: Character; on: boolean; onClick: () =>
       <Avatar src={c.avatar} name={c.name} glow={on} />
       <span className="li-text">
         <span className="li-title ellipsis">{c.name}</span>
-        <span className="li-sub ellipsis">{c.tags.length ? c.tags.slice(0, 3).join(' · ') : `${count} чат(ов)`}</span>
+        <span className="li-sub ellipsis">{c.tags.length ? c.tags.slice(0, 3).join(' · ') : tr('{0} чат(ов)', count)}</span>
       </span>
       <button
         type="button"
         className="icon-btn sm bare"
-        aria-label={c.fav ? 'Убрать из избранного' : 'В избранное'}
-        title={c.fav ? 'Убрать из избранного' : 'В избранное'}
+        aria-label={c.fav ? tr('Убрать из избранного') : tr('В избранное')}
+        title={c.fav ? tr('Убрать из избранного') : tr('В избранное')}
         onClick={(e) => {
           e.stopPropagation();
           upsertCharacter({ ...c, fav: !c.fav });
@@ -184,7 +185,7 @@ function GroupRow({ g, on, onClick }: { g: Group; on: boolean; onClick: () => vo
       </div>
       <span className="li-text">
         <span className="li-title ellipsis">{g.name}</span>
-        <span className="li-sub ellipsis">групповой чат · {members.length} участника(ов)</span>
+        <span className="li-sub ellipsis">{tr('групповой чат ·')} {members.length} {tr('участника(ов)')}</span>
       </span>
       <Users size={15} className="muted" />
     </div>

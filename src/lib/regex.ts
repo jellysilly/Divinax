@@ -1,10 +1,11 @@
+import { tr } from './i18n';
 import type { RegexScript } from '../types';
 import { parseRegex, uid } from './util';
 
 export function blankRegex(): RegexScript {
   return {
     id: uid(),
-    name: 'Новый скрипт',
+    name: tr('Новый скрипт'),
     find: '',
     replace: '',
     flags: 'g',
@@ -63,7 +64,7 @@ export function applyRegex(
 /** Импорт скрипта в формате SillyTavern. */
 export function regexFromST(raw: Record<string, any>): RegexScript {
   const r = blankRegex();
-  r.name = String(raw.scriptName ?? raw.name ?? 'Скрипт');
+  r.name = String(raw.scriptName ?? raw.name ?? tr('Скрипт'));
   r.find = String(raw.findRegex ?? raw.find ?? '');
   r.replace = String(raw.replaceString ?? raw.replace ?? '');
   r.enabled = !raw.disabled;

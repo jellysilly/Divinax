@@ -78,6 +78,7 @@ select option { background: #0c0c10; color: var(--text); }
   pointer-events: none;
   transition: background-image 0.4s;
 }
+.app-bg.solid { filter: none; transform: none; }
 .app-bg.dim::after { content: ''; position: absolute; inset: 0; background: rgba(6, 6, 8, 0.55); }
 .frame-line { position: absolute; pointer-events: none; border-radius: 8px; }
 .frame-line.a { inset: 10px; border: 1px solid rgba(var(--border-rgb), 0.24); }
@@ -625,6 +626,8 @@ select option { background: #0c0c10; color: var(--text); }
 .bg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .bg-tile { border: 1px solid var(--line); border-radius: 12px; padding: 6px; display: flex; flex-direction: column; gap: 8px; text-align: left; position: relative; }
 .bg-tile.on { border-color: var(--line-strong); background: rgba(255, 255, 255, 0.05); }
+.bg-swatch { width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; border: 1px solid var(--line); }
+.bg-swatch.checker { background: repeating-conic-gradient(#2a2a31 0% 25%, #15151a 0% 50%) 50% / 18px 18px; }
 .bg-tile img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; display: block; background: #111; }
 .bg-tile span { font-size: 13px; padding: 0 4px 2px; display: flex; gap: 6px; align-items: center; }
 .bg-tile .del { position: absolute; top: 10px; right: 10px; opacity: 0; }
@@ -695,6 +698,37 @@ select option { background: #0c0c10; color: var(--text); }
 .m-row { display: flex; align-items: center; gap: 14px; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; background: rgba(var(--panel-rgb), 0.8); text-align: left; width: 100%; }
 .sheet { position: fixed; left: 10px; right: 10px; bottom: 10px; z-index: 41; max-height: 80vh; overflow: auto; }
 .sheet .menu-item { height: 48px; }
+
+/* ── Положение аватара ── */
+.avpos-none .msg > .avatar { display: none; }
+.avpos-top .msg { flex-direction: column; align-items: stretch; gap: 10px; }
+.avpos-top .msg > .avatar { align-self: center; width: 64px; height: 64px; font-size: 28px; }
+.avpos-top .msg-head { justify-content: center; flex-wrap: wrap; }
+.avpos-top .msg-tools { margin-left: 0; }
+.avpos-top.bubbles .msg.user, .avpos-top .bubbles .msg.user { flex-direction: column; }
+.avpos-top .bubbles .msg.user .msg-head { flex-direction: row; }
+
+/* ── Белый фон: всё, что лежит прямо на странице, становится тёмным ── */
+.bg-light .header, .bg-light .footer { --text: #1b1a20; --strong: #121117; --soft: #3d3b45; --muted: #5b5963; }
+.bg-light .logo-text { text-shadow: none; }
+.bg-light .star-glow { filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.6)) brightness(0.2); }
+.bg-light .panel .star-glow, .bg-light .popmenu .star-glow, .bg-light .msg .star-glow { filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.85)); }
+.bg-light .nav-item .nav-ico, .bg-light .status-pill { border-color: rgba(20, 20, 30, 0.25); }
+.bg-light .nav-item.active .nav-ico { background: rgba(0, 0, 0, 0.06); box-shadow: none; border-color: rgba(20, 20, 30, 0.55); }
+.bg-light .nav-item.active::after { background: #121117; filter: none; }
+.bg-light .status-pill { background: rgba(255, 255, 255, 0.7); }
+.bg-light .frame-line.a { border-color: rgba(20, 20, 30, 0.2); }
+.bg-light .frame-line.b { border-color: rgba(20, 20, 30, 0.08); }
+.bg-light .hero-info .hero-name { color: #121117; text-shadow: none; }
+.bg-light .hero-info .sub, .bg-light .day-sep span { color: #4a4852; }
+.bg-light .day-sep .ln { background: linear-gradient(90deg, transparent, rgba(20, 20, 30, 0.35)); }
+.bg-light .day-sep .ln.r { background: linear-gradient(90deg, rgba(20, 20, 30, 0.35), transparent); }
+.bg-light .hero .shade { background: linear-gradient(180deg, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.95) 100%); }
+.bg-light .hero-avatar .ring { border-color: rgba(20, 20, 30, 0.45); }
+.bg-light .hero-links .btn.framed { color: #121117; border-color: rgba(20, 20, 30, 0.45); background: rgba(255, 255, 255, 0.8); box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 4px rgba(20, 20, 30, 0.12); }
+.bg-light .hero-links .btn.framed:hover { background: #fff; border-color: #121117; color: #000; }
+.bg-light .msg { background: rgba(var(--panel-rgb), 0.94); border-color: var(--line); }
+.bg-light .messages .empty, .bg-light .main > .col > .lb-toolbar .sub { color: #3d3b45; }
 
 /* ── Адаптивность ── */
 .lib-toggle, .left-toggle { display: none !important; }

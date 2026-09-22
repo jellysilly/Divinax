@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useShallow } from 'zustand/react/shallow';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import {
@@ -119,7 +120,7 @@ function NoChat({ onDrawer }: { onDrawer: (d: 'left' | 'right') => void }) {
   return (
     <>
     <Panel className="grow" style={{ justifyContent: 'center', alignItems: 'center', textAlign: 'center', minHeight: 260 }}>
-      <button type="button" className="menu-btn m-only" style={{ position: 'absolute', top: 14, right: 14 }} aria-label="Меню" onClick={() => setState({ mobileMenu: true })}>
+      <button type="button" className="menu-btn m-only" style={{ position: 'absolute', top: 14, right: 14 }} aria-label={tr('Меню')} onClick={() => setState({ mobileMenu: true })}>
         <Menu size={20} />
       </button>
       <Star size={28} />
@@ -128,18 +129,18 @@ function NoChat({ onDrawer }: { onDrawer: (d: 'left' | 'right') => void }) {
       </h1>
       <p className="sub" style={{ maxWidth: 420 }}>
         {count
-          ? 'Выберите персонажа в библиотеке, чтобы начать или продолжить историю.'
-          : 'Создайте персонажа или перетащите PNG-карточку SillyTavern прямо в окно.'}
+          ? tr('Выберите персонажа в библиотеке, чтобы начать или продолжить историю.')
+          : tr('Создайте персонажа или перетащите PNG-карточку SillyTavern прямо в окно.')}
       </p>
       <div className="row wrap" style={{ justifyContent: 'center' }}>
         <button type="button" className="btn lib-toggle" onClick={() => onDrawer('right')}>
-          <LibraryIcon size={16} /> Библиотека
+          <LibraryIcon size={16} /> {tr('Библиотека')}
         </button>
         <button type="button" className="btn" onClick={() => setTab('characters')}>
-          <Users size={16} /> Персонажи
+          <Users size={16} /> {tr('Персонажи')}
         </button>
         <button type="button" className="btn" onClick={() => setTab('api')}>
-          Подключить API
+          {tr('Подключить API')}
         </button>
       </div>
     </Panel>
@@ -158,10 +159,10 @@ function ChatsPanel({ chat }: { chat?: Chat }) {
   const ownerName = useStore((s) => chatOwnerName(s, chat));
   return (
     <Panel
-      title="Чаты"
+      title={tr('Чаты')}
       actions={
         chat && (
-          <IconBtn icon={<Plus size={17} />} label="Новый чат" onClick={() => startNewChat(chat.ownerType, chat.ownerId)} />
+          <IconBtn icon={<Plus size={17} />} label={tr('Новый чат')} onClick={() => startNewChat(chat.ownerType, chat.ownerId)} />
         )
       }
     >
@@ -174,7 +175,7 @@ function ChatsPanel({ chat }: { chat?: Chat }) {
                 <span className="li-title">
                   <span className="ellipsis">{c.name}</span>
                   {c.branchOf && (
-                    <span className="muted" style={{ display: 'flex' }} title="Ветка">
+                    <span className="muted" style={{ display: 'flex' }} title={tr('Ветка')}>
                       <History size={13} />
                     </span>
                   )}
@@ -187,22 +188,22 @@ function ChatsPanel({ chat }: { chat?: Chat }) {
           ))}
         </div>
       ) : (
-        <div className="sub">Чат не выбран</div>
+        <div className="sub">{tr('Чат не выбран')}</div>
       )}
       <div className="row">
-        <button type="button" className="btn sm grow" disabled={!chat} onClick={() => openModal('chats')} title={`Все чаты: ${ownerName}`}>
-          <History size={15} /> Все чаты
+        <button type="button" className="btn sm grow" disabled={!chat} onClick={() => openModal('chats')} title={tr('Все чаты: {0}', ownerName)}>
+          <History size={15} /> {tr('Все чаты')}
         </button>
         <IconBtn
           icon={<Upload size={16} />}
-          label="Импорт чата (JSONL)"
+          label={tr('Импорт чата (JSONL)')}
           disabled={!chat}
           onClick={async () => {
             const [f] = await pickFiles('.jsonl,.json');
             if (f && chat) importChatText(await f.text(), chat.ownerType, chat.ownerId, f.name);
           }}
         />
-        <IconBtn icon={<Download size={16} />} label="Экспорт чата" disabled={!chat} onClick={() => chat && exportChat(chat.id)} />
+        <IconBtn icon={<Download size={16} />} label={tr('Экспорт чата')} disabled={!chat} onClick={() => chat && exportChat(chat.id)} />
       </div>
     </Panel>
   );
@@ -212,18 +213,18 @@ function AuthorNotePanel({ chat }: { chat: Chat }) {
   const an = chat.authorNote;
   const set = (p: Partial<Chat['authorNote']>) => updateChat(chat.id, (c) => void (c.authorNote = { ...c.authorNote, ...p }));
   return (
-    <Panel title="Заметка автора" actions={<Switch checked={an.enabled} onChange={(v) => set({ enabled: v })} />}>
+    <Panel title={tr('Заметка автора')} actions={<Switch checked={an.enabled} onChange={(v) => set({ enabled: v })} />}>
       <LazyTextarea
         className="textarea serif"
         rows={2}
         value={an.text}
-        placeholder="[Стиль, настроение, напоминания для модели…]"
+        placeholder={tr('[Стиль, настроение, напоминания для модели…]')}
         onCommit={(v) => set({ text: v, enabled: an.enabled || Boolean(v.trim()) })}
         style={{ minHeight: 70, fontSize: 16 }}
       />
       <div className="row">
         <label className="row" style={{ fontSize: 12.5, color: 'var(--muted)' }}>
-          Глубина
+          {tr('Глубина')}
           <NumInput value={an.depth} min={0} max={999} onChange={(v) => set({ depth: v })} className="input sm" style={{ width: 52 }} />
         </label>
         <Select
@@ -232,12 +233,12 @@ function AuthorNotePanel({ chat }: { chat: Chat }) {
           value={an.role}
           onChange={(v) => set({ role: v })}
           options={[
-            { value: 'system', label: 'Система' },
-            { value: 'user', label: 'Пользователь' },
-            { value: 'assistant', label: 'Ассистент' },
+            { value: 'system', label: tr('Система') },
+            { value: 'user', label: tr('Пользователь') },
+            { value: 'assistant', label: tr('Ассистент') },
           ]}
         />
-        <IconBtn icon={<MoreHorizontal size={16} />} label="Все настройки заметки" onClick={() => openModal('authorNote')} />
+        <IconBtn icon={<MoreHorizontal size={16} />} label={tr('Все настройки заметки')} onClick={() => openModal('authorNote')} />
       </div>
     </Panel>
   );
@@ -249,15 +250,15 @@ function QuickRepliesPanel() {
   if (!enabled) return null;
   const set = qr.sets.find((x) => x.id === qr.activeSet) ?? qr.sets[0];
   return (
-    <Panel title="Быстрые ответы" actions={set && <span className="sub">набор «{set.name}»</span>}>
+    <Panel title={tr('Быстрые ответы')} actions={set && <span className="sub">{tr('набор «{0}»', tr(set.name))}</span>}>
       <div className="row wrap" style={{ gap: 6 }}>
         {set?.items.map((it) => (
           <button key={it.id} type="button" className="chip" onClick={() => runQuickReply(it.message, it.autoSend)} title={it.message}>
-            <Zap size={13} /> <span className="ellipsis">{it.label}</span>
+            <Zap size={13} /> <span className="ellipsis">{tr(it.label)}</span>
           </button>
         ))}
         <button type="button" className="chip dashed" onClick={() => openModal('ext', 'quickReplies')}>
-          <Plus size={13} /> Добавить
+          <Plus size={13} /> {tr('Добавить')}
         </button>
       </div>
     </Panel>
@@ -278,7 +279,7 @@ export async function runQuickReply(message: string, autoSend: boolean) {
 function ChatView({ chat, onDrawer }: { chat: Chat; onDrawer: (d: 'left' | 'right') => void }) {
   const owner = useStore((s) => (chat.ownerType === 'group' ? s.groups[chat.ownerId] : s.characters[chat.ownerId]));
   const selecting = useStore((s) => s.selecting);
-  const name = owner?.name ?? 'Неизвестно';
+  const name = owner?.name ?? tr('Неизвестно');
   const char = chat.ownerType === 'char' ? useStore.getState().characters[chat.ownerId] : undefined;
   const cover = useStore((s) => {
     const c = chat.ownerType === 'char' ? s.characters[chat.ownerId] : undefined;
@@ -299,21 +300,21 @@ function ChatView({ chat, onDrawer }: { chat: Chat; onDrawer: (d: 'left' | 'righ
   return (
     <>
       <div className="hero">
-        {cover ? <img className="cover" src={cover} alt="Обложка персонажа" /> : null}
+        {cover ? <img className="cover" src={cover} alt={tr('Обложка персонажа')} /> : null}
         <div className="shade" />
         <img className="window" src="./ornaments/window.png" alt="" aria-hidden="true" />
         <div className="hero-actions">
-          <IconBtn size="xl" className="left-toggle" icon={<PanelLeft size={18} />} label="Чаты и заметки" onClick={() => onDrawer('left')} />
-          <IconBtn size="xl" className="lib-toggle" icon={<LibraryIcon size={18} />} label="Библиотека" onClick={() => onDrawer('right')} />
-          <IconBtn size="xl" className="d-only" icon={<ImageIcon size={18} />} label="Сменить фон чата" onClick={() => openModal('bgPicker')} />
+          <IconBtn size="xl" className="left-toggle" icon={<PanelLeft size={18} />} label={tr('Чаты и заметки')} onClick={() => onDrawer('left')} />
+          <IconBtn size="xl" className="lib-toggle" icon={<LibraryIcon size={18} />} label={tr('Библиотека')} onClick={() => onDrawer('right')} />
+          <IconBtn size="xl" className="d-only" icon={<ImageIcon size={18} />} label={tr('Сменить фон чата')} onClick={() => openModal('bgPicker')} />
           <IconBtn
             size="xl"
             className="d-only"
             icon={<Pencil size={18} />}
-            label="Открыть карточку персонажа"
+            label={tr('Открыть карточку персонажа')}
             onClick={() => (chat.ownerType === 'group' ? openModal('group', { id: chat.ownerId }) : (setState({ editingCharId: chat.ownerId }), setTab('characters')))}
           />
-          <button type="button" className="menu-btn m-only" style={{ width: 48, height: 48 }} aria-label="Меню разделов" onClick={() => setState({ mobileMenu: true })}>
+          <button type="button" className="menu-btn m-only" style={{ width: 48, height: 48 }} aria-label={tr('Меню разделов')} onClick={() => setState({ mobileMenu: true })}>
             <Menu size={20} />
           </button>
         </div>
@@ -338,7 +339,7 @@ function ChatView({ chat, onDrawer }: { chat: Chat; onDrawer: (d: 'left' | 'righ
         <div className="col grow" style={{ gap: 6, paddingBottom: 2 }}>
           <h1 className="hero-name">{name}</h1>
           <span className="sub">
-            Чат «{chat.name}» · {msgCount} {plural(msgCount, 'сообщение', 'сообщения', 'сообщений')}
+            {tr('Чат «{0}» · {1} {2}', chat.name, msgCount, plural(msgCount, 'сообщение', 'сообщения', 'сообщений'))}
           </span>
         </div>
         <div className="hero-links d-only">
@@ -347,7 +348,7 @@ function ChatView({ chat, onDrawer }: { chat: Chat; onDrawer: (d: 'left' | 'righ
             className="btn framed"
             onClick={() => (chat.ownerType === 'group' ? openModal('group', { id: chat.ownerId }) : (setState({ editingCharId: chat.ownerId }), setTab('characters')))}
           >
-            Карточка
+            {tr('Карточка')}
           </button>
           <Star size={10} />
           <button
@@ -358,11 +359,11 @@ function ChatView({ chat, onDrawer }: { chat: Chat; onDrawer: (d: 'left' | 'righ
               setTab('lorebook');
             }}
           >
-            Лорбук
+            {tr('Лорбук')}
           </button>
           <Star size={10} />
           <button type="button" className="btn framed" onClick={() => openModal('gallery', chat.ownerId)}>
-            Галерея
+            {tr('Галерея')}
           </button>
         </div>
       </div>
@@ -372,15 +373,15 @@ function ChatView({ chat, onDrawer }: { chat: Chat; onDrawer: (d: 'left' | 'righ
           className="btn framed"
           onClick={() => (chat.ownerType === 'group' ? openModal('group', { id: chat.ownerId }) : (setState({ editingCharId: chat.ownerId }), setTab('characters')))}
         >
-          Карточка
+          {tr('Карточка')}
         </button>
         <Star size={10} />
         <button type="button" className="btn framed" onClick={() => setTab('lorebook')}>
-          Лорбук
+          {tr('Лорбук')}
         </button>
         <Star size={10} />
         <button type="button" className="btn framed" onClick={() => openModal('chats')}>
-          Чаты
+          {tr('Чаты')}
         </button>
       </div>
       <Messages chat={chat} />
@@ -429,7 +430,7 @@ function Messages({ chat }: { chat: Chat }) {
     <div ref={ref} onScroll={onScroll} className={`messages scroll ${style} ${style === 'document' ? 'doc' : ''}`}>
       {start > 0 && (
         <button type="button" className="btn sm" style={{ alignSelf: 'center' }} onClick={() => setLimit((l) => l + 60)}>
-          Показать ранние сообщения ({start})
+          {tr('Показать ранние сообщения ({0})', start)}
         </button>
       )}
       {msgs.slice(start).map((m, k) => {
@@ -453,8 +454,8 @@ function Messages({ chat }: { chat: Chat }) {
       })}
       {!msgs.length && (
         <div className="empty">
-          <div className="h3">Начало истории</div>
-          У персонажа нет приветствия — напишите первое сообщение.
+          <div className="h3">{tr('Начало истории')}</div>
+          {tr('У персонажа нет приветствия — напишите первое сообщение.')}
         </div>
       )}
     </div>
@@ -466,7 +467,7 @@ function SelectBar({ chat }: { chat: Chat }) {
   return (
     <div className="select-bar">
       <Trash2 size={16} />
-      <span className="grow">Выбрано: {sel.length}. Нажимайте на сообщения, чтобы отметить.</span>
+      <span className="grow">{tr('Выбрано: {0}. Нажимайте на сообщения, чтобы отметить.', sel.length)}</span>
       <button
         type="button"
         className="btn sm"
@@ -475,10 +476,10 @@ function SelectBar({ chat }: { chat: Chat }) {
           if (idx >= 0) setState({ selecting: chat.messages.slice(idx).map((m) => m.id) });
         }}
       >
-        До конца
+        {tr('До конца')}
       </button>
       <button type="button" className="btn sm" onClick={() => setState({ selecting: null })}>
-        Отмена
+        {tr('Отмена')}
       </button>
       <button
         type="button"
@@ -489,7 +490,7 @@ function SelectBar({ chat }: { chat: Chat }) {
           setState({ selecting: null });
         }}
       >
-        Удалить
+        {tr('Удалить')}
       </button>
     </div>
   );
@@ -531,7 +532,7 @@ function Composer({ chat }: { chat: Chat }) {
     setState({ draft: '' });
     const imgs = images;
     setImages([]);
-    await sendMessage(text || '[изображение]', { images: imgs.length ? imgs : undefined });
+    await sendMessage(text || tr('[изображение]'), { images: imgs.length ? imgs : undefined });
   };
 
   const editLastUser = () => {
@@ -567,13 +568,13 @@ function Composer({ chat }: { chat: Chat }) {
       <img className="rose" src="./ornaments/rose.png" alt="" aria-hidden="true" />
       <div className="composer-box">
         <div style={{ position: 'relative' }}>
-          <IconBtn bare size="lg" icon={<WandSparkles size={18} />} label="Меню расширений" onClick={() => setWand(!wand)} />
+          <IconBtn bare size="lg" icon={<WandSparkles size={18} />} label={tr('Меню расширений')} onClick={() => setWand(!wand)} />
           {wand && <WandMenu chat={chat} onClose={() => setWand(false)} onAttach={attach} onMic={mic} listening={Boolean(listening)} />}
         </div>
         {images.length > 0 && (
           <div className="attach-preview">
             {images.map((src, i) => (
-              <button key={i} type="button" title="Убрать" onClick={() => setImages((x) => x.filter((_, k) => k !== i))}>
+              <button key={i} type="button" title={tr('Убрать')} onClick={() => setImages((x) => x.filter((_, k) => k !== i))}>
                 <img src={src} alt="" />
               </button>
             ))}
@@ -583,8 +584,8 @@ function Composer({ chat }: { chat: Chat }) {
           ref={ta}
           rows={1}
           value={draft}
-          placeholder={listening ? 'Говорите…' : window.innerWidth < 760 ? 'Сообщение…' : 'Напишите сообщение…'}
-          aria-label="Сообщение"
+          placeholder={listening ? tr('Говорите…') : window.innerWidth < 760 ? tr('Сообщение…') : tr('Напишите сообщение…')}
+          aria-label={tr('Сообщение')}
           onChange={(e) => setState({ draft: e.target.value })}
           onKeyDown={(e) => {
             const isMobile = window.matchMedia('(max-width: 760px)').matches;
@@ -604,14 +605,14 @@ function Composer({ chat }: { chat: Chat }) {
             setImages((x) => [...x, ...urls]);
           }}
         />
-        {listening && <IconBtn bare size="lg" icon={<Mic size={18} />} label="Остановить запись" active onClick={mic} />}
-        <IconBtn bare size="lg" className="d-only" icon={<ArrowRightToLine size={18} />} label="Продолжить последний ответ" disabled={busy} onClick={() => void runGeneration('continue')} />
+        {listening && <IconBtn bare size="lg" icon={<Mic size={18} />} label={tr('Остановить запись')} active onClick={mic} />}
+        <IconBtn bare size="lg" className="d-only" icon={<ArrowRightToLine size={18} />} label={tr('Продолжить последний ответ')} disabled={busy} onClick={() => void runGeneration('continue')} />
         {busy ? (
-          <button type="button" className="send-btn" aria-label="Остановить" title="Остановить генерацию (Esc)" onClick={stopGeneration}>
+          <button type="button" className="send-btn" aria-label={tr('Остановить')} title={tr('Остановить генерацию (Esc)')} onClick={stopGeneration}>
             <Square size={16} fill="currentColor" />
           </button>
         ) : (
-          <button type="button" className="send-btn" aria-label="Отправить" title="Отправить" onClick={() => void submit()}>
+          <button type="button" className="send-btn" aria-label={tr('Отправить')} title={tr('Отправить')} onClick={() => void submit()}>
             <Send size={18} />
           </button>
         )}
@@ -619,7 +620,7 @@ function Composer({ chat }: { chat: Chat }) {
       <button
         type="button"
         className="menu-btn"
-        aria-label="Меню чата"
+        aria-label={tr('Меню чата')}
         aria-haspopup="menu"
         aria-expanded={menuOpen}
         onClick={() => setState({ chatMenu: !menuOpen })}
@@ -664,46 +665,46 @@ function ChatMenu({ chat }: { chat: Chat }) {
   const items = (
     <>
       <MenuItem icon={<Plus size={17} />} onClick={() => (close(), startNewChat(chat.ownerType, chat.ownerId))}>
-        Начать новый чат
+        {tr('Начать новый чат')}
       </MenuItem>
       <MenuItem icon={<Folder size={17} />} onClick={() => openModal('chats')}>
-        Управление файлами чата
+        {tr('Управление файлами чата')}
       </MenuItem>
       <MenuItem icon={<FileText size={17} />} onClick={() => openModal('authorNote')}>
-        Заметка автора
+        {tr('Заметка автора')}
       </MenuItem>
       <MenuItem icon={<RefreshCw size={17} />} onClick={() => (close(), void runGeneration('regenerate'))}>
-        Перегенерировать
+        {tr('Перегенерировать')}
       </MenuItem>
       <MenuItem icon={<ArrowRightToLine size={17} />} onClick={() => (close(), void runGeneration('continue'))}>
-        Продолжить ответ
+        {tr('Продолжить ответ')}
       </MenuItem>
       <MenuItem icon={<VenetianMask size={17} />} onClick={() => (close(), void runGeneration('impersonate'))}>
-        Ответить за меня
+        {tr('Ответить за меня')}
       </MenuItem>
       <MenuItem icon={<Trash2 size={17} />} onClick={() => setState({ selecting: [], chatMenu: false })}>
-        Удалить сообщения
+        {tr('Удалить сообщения')}
       </MenuItem>
       {chat.ownerType === 'char' && (
         <MenuItem icon={<Users size={17} />} onClick={() => (close(), convertToGroup(chat))}>
-          Превратить в групповой
+          {tr('Превратить в групповой')}
         </MenuItem>
       )}
       <div className="menu-sep" />
       <MenuItem icon={<ScrollText size={17} />} onClick={() => openModal('prompt')}>
-        Просмотр промпта
+        {tr('Просмотр промпта')}
       </MenuItem>
       <MenuItem icon={<Download size={17} />} onClick={() => (close(), exportChat(chat.id))}>
-        Экспорт чата
+        {tr('Экспорт чата')}
       </MenuItem>
       <MenuItem icon={<X size={17} />} onClick={closeChat}>
-        Закрыть чат
+        {tr('Закрыть чат')}
       </MenuItem>
     </>
   );
   return (
     <>
-      <div ref={ref} role="menu" aria-label="Меню чата" className="popmenu scroll">
+      <div ref={ref} role="menu" aria-label={tr('Меню чата')} className="popmenu scroll">
         <div className="panel-star" style={{ position: 'absolute', top: -8, left: '50%', marginLeft: -8 }}>
           <Star />
         </div>
@@ -713,8 +714,8 @@ function ChatMenu({ chat }: { chat: Chat }) {
         <div className="drawer-backdrop" onClick={close} />
         <Panel
           className="sheet scroll"
-          title="Меню чата"
-          actions={<IconBtn icon={<X size={16} />} label="Закрыть" onClick={close} />}
+          title={tr('Меню чата')}
+          actions={<IconBtn icon={<X size={16} />} label={tr('Закрыть')} onClick={close} />}
         >
           <div className="col" style={{ gap: 0 }}>
             {items}
@@ -732,7 +733,7 @@ function convertToGroup(chat: Chat) {
   const now = Date.now();
   const g = {
     id: uid(),
-    name: `${ch.name} и компания`,
+    name: tr('{0} и компания', ch.name),
     members: [ch.id],
     disabledMembers: [],
     activation: 'natural' as const,
@@ -750,7 +751,7 @@ function convertToGroup(chat: Chat) {
   setState((st) => ({ chats: { ...st.chats, [copy.id]: copy } }));
   openChat(copy.id);
   openModal('group', { id: g.id });
-  toast('Чат превращён в групповой — добавьте участников', 'success');
+  toast(tr('Чат превращён в групповой — добавьте участников'), 'success');
 }
 
 function WandMenu({
@@ -775,43 +776,43 @@ function WandMenu({
   };
   return (
     <div ref={ref} role="menu" className="popmenu left" style={{ bottom: 58, width: 280 }}>
-      <div className="menu-title">Быстрые действия</div>
+      <div className="menu-title">{tr('Быстрые действия')}</div>
       <MenuItem icon={<Paperclip size={17} />} onClick={go(onAttach)}>
-        Прикрепить изображение
+        {tr('Прикрепить изображение')}
       </MenuItem>
       {ext.summarize && (
         <MenuItem icon={<Brain size={17} />} onClick={go(() => void summarizeChat())}>
-          Обновить пересказ
+          {tr('Обновить пересказ')}
         </MenuItem>
       )}
       {ext.stt && (
         <MenuItem icon={<Mic size={17} />} onClick={go(onMic)}>
-          {listening ? 'Остановить запись' : 'Надиктовать сообщение'}
+          {listening ? tr('Остановить запись') : tr('Надиктовать сообщение')}
         </MenuItem>
       )}
       {ext.tts && lastChar && (
         <MenuItem icon={<Volume2 size={17} />} onClick={go(() => speak(lastChar.text))}>
-          Озвучить последний ответ
+          {tr('Озвучить последний ответ')}
         </MenuItem>
       )}
       {ext.imageGen && (
         <MenuItem icon={<ImagePlus size={17} />} onClick={go(() => void generateImage(chat.id, 'scene'))}>
-          Нарисовать сцену
+          {tr('Нарисовать сцену')}
         </MenuItem>
       )}
       {ext.translate && (
         <MenuItem icon={<Languages size={17} />} onClick={go(() => openModal('ext', 'translate'))}>
-          Перевод
+          {tr('Перевод')}
         </MenuItem>
       )}
       <MenuItem icon={<MessageCircle size={17} />} onClick={go(() => void runSlash('/sys ' + (getState().draft || '…')).then(() => setState({ draft: '' })))}>
-        Отправить как рассказчик
+        {tr('Отправить как рассказчик')}
       </MenuItem>
       <MenuItem icon={<IdCard size={17} />} onClick={go(() => openModal('prompt'))}>
-        Что видит модель
+        {tr('Что видит модель')}
       </MenuItem>
       <MenuItem icon={<BookMarked size={17} />} onClick={go(() => openModal('help'))}>
-        Команды и макросы
+        {tr('Команды и макросы')}
       </MenuItem>
     </div>
   );

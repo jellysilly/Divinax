@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 // Экспорт/импорт настроек и полная резервная копия.
 import { getState, setState, toast, type PersistedState } from '../store';
 import { download } from './util';
@@ -39,7 +40,7 @@ export function exportSettings(full: boolean) {
 }
 
 export function importSettings(json: Record<string, unknown>) {
-  if (!json || json.divinax !== 1) throw new Error('Это не файл настроек Divinax');
+  if (!json || json.divinax !== 1) throw new Error(tr('Это не файл настроек Divinax'));
   const patch: Partial<PersistedState> = {};
   const s = getState();
   for (const k of [...SETTINGS_KEYS, ...DATA_KEYS]) {
@@ -56,5 +57,5 @@ export function importSettings(json: Record<string, unknown>) {
     patch.lorebooks = { ...s.lorebooks, ...(patch.lorebooks ?? {}) };
   }
   setState(patch);
-  toast(json.kind === 'backup' ? 'Резервная копия восстановлена' : 'Настройки импортированы', 'success');
+  toast(json.kind === 'backup' ? tr('Резервная копия восстановлена') : tr('Настройки импортированы'), 'success');
 }

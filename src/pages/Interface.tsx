@@ -1,7 +1,8 @@
+import { tr } from '../lib/i18n';
 import { Archive, Download, Save, Trash2, Upload } from 'lucide-react';
 import { activeChat, setState, toast, updateChat, useStore } from '../store';
 import type { ThemeColors, UiSettings } from '../types';
-import { Field, IconBtn, Panel, Seg, Select, Slider, Star, Switch } from '../components/ui';
+import { BgThumb, Field, IconBtn, Panel, Seg, Select, Slider, Star, Switch } from '../components/ui';
 import { THEMES } from '../lib/defaults';
 import { download, pickFiles, readDataUrl, shrinkImage, uid } from '../lib/util';
 import { exportSettings, importSettings } from '../lib/backup';
@@ -21,8 +22,8 @@ export function InterfacePage() {
   const ui = useStore((s) => s.ui);
   const chat = useStore(activeChat);
   const themeOptions = [
-    ...Object.entries(THEMES).map(([id, t]) => ({ value: id, label: t.name })),
-    ...ui.customThemes.map((t) => ({ value: 'custom:' + t.name, label: t.name + ' (своя)' })),
+    ...Object.entries(THEMES).map(([id, t]) => ({ value: id, label: tr(t.name) })),
+    ...ui.customThemes.map((t) => ({ value: 'custom:' + t.name, label: t.name + tr(' (своя)') })),
   ];
   const currentBg = (ui.perChatBg && chat?.background) || ui.activeBg;
 
@@ -40,131 +41,136 @@ export function InterfacePage() {
 
   return (
     <div className="cols wrap-md">
-      <Panel className="fill" style={{ flex: '1 1 0' }} title="Тема оформления">
+      <Panel className="fill" style={{ flex: '1 1 0' }} title={tr('Тема оформления')}>
         <div className="body scroll grow" style={{ paddingRight: 4 }}>
-          <Field label="Тема">
+          <Field label={tr('Тема')}>
             <Select value={ui.theme} onChange={pickTheme} options={themeOptions} />
           </Field>
-          <Field label="Цвета">
+          <Field label={tr('Цвета')}>
             <div className="color-grid">
               {COLOR_LABELS.map(([k, label]) => (
                 <label key={k} className="color-btn">
                   <span className="dot" style={{ background: ui.colors[k] }} />
-                  {label}
-                  <input type="color" value={ui.colors[k]} onChange={(e) => setUi({ colors: { ...ui.colors, [k]: e.target.value } })} aria-label={label} />
+                  {tr(label)}
+                  <input type="color" value={ui.colors[k]} onChange={(e) => setUi({ colors: { ...ui.colors, [k]: e.target.value } })} aria-label={tr(label)} />
                 </label>
               ))}
             </div>
           </Field>
-          <Slider label="Размер шрифта" value={ui.fontScale} min={0.8} max={1.4} step={0.01} onChange={(v) => setUi({ fontScale: v })} />
-          <Slider label="Ширина чата" value={ui.chatWidth} min={30} max={100} suffix="%" onChange={(v) => setUi({ chatWidth: Math.round(v) })} hint="Для стиля «Документ»" />
-          <Slider label="Размытие фона, px" value={ui.bgBlur} min={0} max={30} onChange={(v) => setUi({ bgBlur: Math.round(v) })} />
-          <Slider label="Интенсивность орнаментов" value={ui.ornaments} min={0} max={100} suffix="%" onChange={(v) => setUi({ ornaments: Math.round(v) })} />
+          <Slider label={tr('Размер шрифта')} value={ui.fontScale} min={0.8} max={1.4} step={0.01} onChange={(v) => setUi({ fontScale: v })} />
+          <Slider label={tr('Ширина чата')} value={ui.chatWidth} min={30} max={100} suffix="%" onChange={(v) => setUi({ chatWidth: Math.round(v) })} hint={tr('Для стиля «Документ»')} />
+          <Slider label={tr('Размытие фона, px')} value={ui.bgBlur} min={0} max={30} onChange={(v) => setUi({ bgBlur: Math.round(v) })} />
+          <Slider label={tr('Интенсивность орнаментов')} value={ui.ornaments} min={0} max={100} suffix="%" onChange={(v) => setUi({ ornaments: Math.round(v) })} />
         </div>
         <div className="row">
           <button
             type="button"
             className="btn primary grow"
             onClick={() => {
-              const name = prompt('Название темы', 'Моя тема');
+              const name = prompt(tr('Название темы'), tr('Моя тема'));
               if (!name) return;
               setUi({ customThemes: [...ui.customThemes.filter((t) => t.name !== name), { name, colors: ui.colors }], theme: 'custom:' + name });
-              toast('Тема сохранена', 'success');
+              toast(tr('Тема сохранена'), 'success');
             }}
           >
-            <Save size={15} /> Сохранить тему
+            <Save size={15} /> {tr('Сохранить тему')}
           </button>
           <IconBtn
             size="lg"
             icon={<Upload size={16} />}
-            label="Импорт темы"
+            label={tr('Импорт темы')}
             onClick={async () => {
               const [f] = await pickFiles('.json');
               if (!f) return;
               try {
                 const j = JSON.parse(await f.text());
-                if (!j.colors) throw new Error('нет цветов');
+                if (!j.colors) throw new Error(tr('нет цветов'));
                 const name = j.name ?? f.name.replace(/\.json$/i, '');
                 setUi({ customThemes: [...ui.customThemes.filter((t) => t.name !== name), { name, colors: { ...ui.colors, ...j.colors } }], theme: 'custom:' + name, colors: { ...ui.colors, ...j.colors } });
               } catch (e) {
-                toast('Ошибка: ' + (e as Error).message, 'error');
+                toast(tr('Ошибка: ') + (e as Error).message, 'error');
               }
             }}
           />
-          <IconBtn size="lg" icon={<Download size={16} />} label="Экспорт темы" onClick={() => download('divinax-theme.json', JSON.stringify({ name: ui.theme.replace('custom:', ''), colors: ui.colors, fontScale: ui.fontScale }, null, 2))} />
+          <IconBtn size="lg" icon={<Download size={16} />} label={tr('Экспорт темы')} onClick={() => download('divinax-theme.json', JSON.stringify({ name: ui.theme.replace('custom:', ''), colors: ui.colors, fontScale: ui.fontScale }, null, 2))} />
         </div>
       </Panel>
 
-      <Panel className="fill" style={{ flex: '1 1 0' }} title="Чат">
+      <Panel className="fill" style={{ flex: '1 1 0' }} title={tr('Чат')}>
         <div className="body scroll grow" style={{ paddingRight: 4 }}>
-          <Field label="Стиль сообщений">
+          <Field label={tr('Стиль сообщений')}>
             <Seg
               value={ui.messageStyle}
               onChange={(v) => setUi({ messageStyle: v })}
               options={[
-                { value: 'flat', label: 'Плоский' },
-                { value: 'bubbles', label: 'Пузыри' },
-                { value: 'document', label: 'Документ' },
+                { value: 'flat', label: tr('Плоский') },
+                { value: 'bubbles', label: tr('Пузыри') },
+                { value: 'document', label: tr('Документ') },
               ]}
             />
           </Field>
-          <Field label="Аватары">
+          <Field label={tr('Положение аватара')}>
+            <Seg
+              value={ui.avatarPosition}
+              onChange={(v) => setUi({ avatarPosition: v })}
+              options={[
+                { value: 'top', label: tr('Сверху') },
+                { value: 'side', label: tr('Сбоку') },
+                { value: 'none', label: tr('Без аватара') },
+              ]}
+            />
+          </Field>
+          <Field label={tr('Аватары')}>
             <Seg
               value={ui.avatarStyle}
               onChange={(v) => setUi({ avatarStyle: v })}
               options={[
-                { value: 'round', label: 'Круглые' },
-                { value: 'square', label: 'Квадратные' },
-                { value: 'portrait', label: 'Портрет' },
+                { value: 'round', label: tr('Круглые') },
+                { value: 'square', label: tr('Квадратные') },
+                { value: 'portrait', label: tr('Портрет') },
               ]}
             />
           </Field>
           <div className="col" style={{ gap: 10 }}>
-            <Switch label="Время отправки" checked={ui.showTimestamps} onChange={(v) => setUi({ showTimestamps: v })} />
-            <Switch label="Номер сообщения" checked={ui.showNumbers} onChange={(v) => setUi({ showNumbers: v })} />
-            <Switch label="Счётчик токенов" checked={ui.showTokens} onChange={(v) => setUi({ showTokens: v })} />
-            <Switch label="Время генерации" checked={ui.showGenTime} onChange={(v) => setUi({ showGenTime: v })} />
-            <Switch label="Стрелки свайпов" checked={ui.swipeArrows} onChange={(v) => setUi({ swipeArrows: v })} />
-            <Switch label="Автопрокрутка чата" checked={ui.autoscroll} onChange={(v) => setUi({ autoscroll: v })} />
-            <Switch label="Enter отправляет сообщение" checked={ui.enterSends} onChange={(v) => setUi({ enterSends: v })} />
-            <Switch label="Подтверждать удаление" checked={ui.confirmDelete} onChange={(v) => setUi({ confirmDelete: v })} />
-            <Switch label="Мерцание звёзд и свечей" checked={ui.twinkle} onChange={(v) => setUi({ twinkle: v })} />
+            <Switch label={tr('Время отправки')} checked={ui.showTimestamps} onChange={(v) => setUi({ showTimestamps: v })} />
+            <Switch label={tr('Номер сообщения')} checked={ui.showNumbers} onChange={(v) => setUi({ showNumbers: v })} />
+            <Switch label={tr('Счётчик токенов')} checked={ui.showTokens} onChange={(v) => setUi({ showTokens: v })} />
+            <Switch label={tr('Время генерации')} checked={ui.showGenTime} onChange={(v) => setUi({ showGenTime: v })} />
+            <Switch label={tr('Стрелки свайпов')} checked={ui.swipeArrows} onChange={(v) => setUi({ swipeArrows: v })} />
+            <Switch label={tr('Автопрокрутка чата')} checked={ui.autoscroll} onChange={(v) => setUi({ autoscroll: v })} />
+            <Switch label={tr('Enter отправляет сообщение')} checked={ui.enterSends} onChange={(v) => setUi({ enterSends: v })} />
+            <Switch label={tr('Подтверждать удаление')} checked={ui.confirmDelete} onChange={(v) => setUi({ confirmDelete: v })} />
+            <Switch label={tr('Мерцание звёзд и свечей')} checked={ui.twinkle} onChange={(v) => setUi({ twinkle: v })} />
           </div>
-          <Field label="Язык интерфейса" hint="Английский перевод появится в следующих версиях">
-            <Select
-              value={ui.language}
-              onChange={(v) => setUi({ language: v })}
-              options={[
-                { value: 'ru', label: 'Русский' },
-                { value: 'en', label: 'English (скоро)' },
-              ]}
+          <Field label={tr('Язык интерфейса')}>
+            <Switch
+              label={tr('Английский интерфейс')}
+              hint={tr('Выключите, чтобы переключиться на русский')}
+              checked={ui.language === 'en'}
+              onChange={(v) => setUi({ language: v ? 'en' : 'ru' })}
             />
           </Field>
         </div>
       </Panel>
 
-      <Panel className="fill" style={{ flex: '1 1 0' }} title="Фоны">
+      <Panel className="fill" style={{ flex: '1 1 0' }} title={tr('Фоны')}>
         <div className="body scroll grow" style={{ paddingRight: 4 }}>
           <div className="bg-grid">
-            <button type="button" className={`bg-tile ${!currentBg ? 'on' : ''}`} onClick={() => setBg('')}>
-              <div style={{ width: '100%', aspectRatio: '16 / 9', borderRadius: 8, background: '#060608', border: '1px solid var(--line)' }} />
-              <span>{!currentBg && <Star size={10} />} Без фона</span>
-            </button>
             {ui.backgrounds.map((b) => (
               <div key={b.id} className={`bg-tile ${currentBg === b.id ? 'on' : ''}`} role="button" tabIndex={0} onClick={() => setBg(b.id)}>
-                <img src={b.url} alt="" loading="lazy" />
+                <BgThumb bg={b} />
                 <span>
-                  {currentBg === b.id && <Star size={10} />} {b.name}
+                  {currentBg === b.id && <Star size={10} />} {b.builtin ? tr(b.name) : b.name}
                 </span>
                 {!b.builtin && (
                   <IconBtn
                     size="sm"
                     className="del danger xl"
                     icon={<Trash2 size={14} />}
-                    label="Удалить фон"
+                    label={tr('Удалить фон')}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setUi({ backgrounds: ui.backgrounds.filter((x) => x.id !== b.id), activeBg: ui.activeBg === b.id ? '' : ui.activeBg });
+                      setUi({ backgrounds: ui.backgrounds.filter((x) => x.id !== b.id), activeBg: ui.activeBg === b.id ? 'bg-transparent' : ui.activeBg });
                     }}
                   />
                 )}
@@ -185,21 +191,21 @@ export function InterfacePage() {
               }}
             >
               <Upload size={18} />
-              Загрузить фон
+              {tr('Загрузить фон')}
             </button>
           </div>
           <div className="col" style={{ gap: 10 }}>
-            <Switch label="Свой фон для каждого чата" checked={ui.perChatBg} onChange={(v) => setUi({ perChatBg: v })} />
-            <Switch label="Затемнять фон под сообщениями" checked={ui.dimBg} onChange={(v) => setUi({ dimBg: v })} />
+            <Switch label={tr('Свой фон для каждого чата')} checked={ui.perChatBg} onChange={(v) => setUi({ perChatBg: v })} />
+            <Switch label={tr('Затемнять фон под сообщениями')} checked={ui.dimBg} onChange={(v) => setUi({ dimBg: v })} />
           </div>
-          <Field label="Подгонка изображения">
+          <Field label={tr('Подгонка изображения')}>
             <Seg
               value={ui.bgFit}
               onChange={(v) => setUi({ bgFit: v })}
               options={[
-                { value: 'cover', label: 'Заполнить' },
-                { value: 'contain', label: 'Вписать' },
-                { value: 'stretch', label: 'Растянуть' },
+                { value: 'cover', label: tr('Заполнить') },
+                { value: 'contain', label: tr('Вписать') },
+                { value: 'stretch', label: tr('Растянуть') },
               ]}
             />
           </Field>
@@ -214,16 +220,16 @@ export function InterfacePage() {
               try {
                 importSettings(JSON.parse(await f.text()));
               } catch (e) {
-                toast('Ошибка: ' + (e as Error).message, 'error');
+                toast(tr('Ошибка: ') + (e as Error).message, 'error');
               }
             }}
           >
-            <Upload size={15} /> Импорт настроек
+            <Upload size={15} /> {tr('Импорт настроек')}
           </button>
           <button type="button" className="btn" onClick={() => exportSettings(false)}>
-            <Download size={15} /> Экспорт
+            <Download size={15} /> {tr('Экспорт')}
           </button>
-          <IconBtn size="lg" icon={<Archive size={16} />} label="Полная резервная копия (персонажи, чаты, лорбуки)" onClick={() => exportSettings(true)} />
+          <IconBtn size="lg" icon={<Archive size={16} />} label={tr('Полная резервная копия (персонажи, чаты, лорбуки)')} onClick={() => exportSettings(true)} />
         </div>
       </Panel>
     </div>

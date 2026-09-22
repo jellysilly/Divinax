@@ -1,3 +1,4 @@
+import { locale, tr } from './i18n';
 // Озвучка и распознавание речи через Web Speech API (работает без сервера).
 import { getState, toast } from '../store';
 
@@ -16,7 +17,7 @@ function speakable(text: string, quotesOnly: boolean): string {
 
 export function speak(text: string) {
   if (typeof speechSynthesis === 'undefined') {
-    toast('Браузер не поддерживает озвучку', 'error');
+    toast(tr('Браузер не поддерживает озвучку'), 'error');
     return;
   }
   const cfg = getState().ext.tts;
@@ -26,7 +27,7 @@ export function speak(text: string) {
   const u = new SpeechSynthesisUtterance(t);
   const v = voices().find((x) => x.voiceURI === cfg.voice);
   if (v) u.voice = v;
-  else u.lang = 'ru-RU';
+  else u.lang = locale();
   u.rate = cfg.rate;
   u.pitch = cfg.pitch;
   speechSynthesis.speak(u);
@@ -39,7 +40,7 @@ type Rec = { start: () => void; stop: () => void; onresult: ((e: any) => void) |
 export function startRecognition(onText: (text: string, final: boolean) => void, onEnd: () => void): (() => void) | null {
   const Ctor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
   if (!Ctor) {
-    toast('Распознавание речи не поддерживается этим браузером', 'error');
+    toast(tr('Распознавание речи не поддерживается этим браузером'), 'error');
     return null;
   }
   const rec: Rec = new Ctor();
@@ -55,7 +56,7 @@ export function startRecognition(onText: (text: string, final: boolean) => void,
     }
     onText(text, final);
   };
-  rec.onerror = (e: any) => toast('Ошибка распознавания: ' + (e.error ?? ''), 'error');
+  rec.onerror = (e: any) => toast(tr('Ошибка распознавания: ') + (e.error ?? ''), 'error');
   rec.onend = onEnd;
   rec.start();
   return () => rec.stop();

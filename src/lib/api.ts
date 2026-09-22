@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 // Клиенты API: Chat Completion (OpenAI-совместимые, Claude), Text Completion, KoboldAI, AI Horde, NovelAI.
 import type { ApiSettings, ChatSource, GenPreset, MainApi, Role, TextSource } from '../types';
 import { sleep } from './util';
@@ -61,9 +62,9 @@ export const MAIN_API_LABELS: Record<MainApi, string> = {
 export function sourceName(api: ApiSettings): string {
   switch (api.main) {
     case 'chat':
-      return CHAT_SOURCES.find((s) => s.id === api.chatSource)?.name ?? api.chatSource;
+      return tr(CHAT_SOURCES.find((s) => s.id === api.chatSource)?.name ?? api.chatSource);
     case 'text':
-      return TEXT_SOURCES.find((s) => s.id === api.textSource)?.name ?? api.textSource;
+      return tr(TEXT_SOURCES.find((s) => s.id === api.textSource)?.name ?? api.textSource);
     default:
       return MAIN_API_LABELS[api.main];
   }
@@ -187,7 +188,7 @@ function openaiBody(api: ApiSettings, req: GenRequest, model: string) {
 
 async function openaiChat(api: ApiSettings, req: GenRequest): Promise<GenResult> {
   const { base, key } = chatEndpoint(api);
-  if (!base) throw new Error('Не указан адрес API');
+  if (!base) throw new Error(tr('Не указан адрес API'));
   const model = currentModel(api);
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (key) headers.Authorization = `Bearer ${key}`;
@@ -210,7 +211,7 @@ async function openaiChat(api: ApiSettings, req: GenRequest): Promise<GenResult>
     if (line === '[DONE]') break;
     try {
       const j = JSON.parse(line);
-      if (j.error) throw new Error(j.error.message ?? 'Ошибка API');
+      if (j.error) throw new Error(j.error.message ?? tr('Ошибка API'));
       if (j.model) usedModel = j.model;
       const d = j.choices?.[0]?.delta ?? {};
       if (d.content) text += d.content;
@@ -243,7 +244,7 @@ async function claudeChat(api: ApiSettings, req: GenRequest): Promise<GenResult>
     if (last && last.role === role) last.content += '\n\n' + content;
     else rest.push({ role, content });
   }
-  if (!rest.length || rest[0].role !== 'user') rest.unshift({ role: 'user', content: '[Начало]' });
+  if (!rest.length || rest[0].role !== 'user') rest.unshift({ role: 'user', content: tr('[Начало]') });
   const body: Record<string, unknown> = {
     model,
     system,
@@ -284,7 +285,7 @@ async function claudeChat(api: ApiSettings, req: GenRequest): Promise<GenResult>
   for await (const line of sseLines(res, req.signal)) {
     try {
       const j = JSON.parse(line);
-      if (j.type === 'error') throw new Error(j.error?.message ?? 'Ошибка Claude');
+      if (j.type === 'error') throw new Error(j.error?.message ?? tr('Ошибка Claude'));
       if (j.type === 'content_block_delta') {
         if (j.delta?.type === 'text_delta') text += j.delta.text;
         if (j.delta?.type === 'thinking_delta') reasoning += j.delta.thinking;
@@ -331,7 +332,7 @@ function samplerParams(p: GenPreset, maxTokens: number) {
 
 async function textCompletion(api: ApiSettings, req: GenRequest): Promise<GenResult> {
   const base = textBase(api);
-  if (!base) throw new Error('Не указан адрес сервера');
+  if (!base) throw new Error(tr('Не указан адрес сервера'));
   const model = currentModel(api);
   const url = base.endsWith('/v1') ? `${base}/completions` : `${base}/v1/completions`;
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -432,12 +433,12 @@ async function horde(api: ApiSettings, req: GenRequest): Promise<GenResult> {
   while (!req.signal.aborted) {
     await sleep(2500);
     const s = await (await fetch(`${HORDE}/generate/text/status/${id}`, { signal: req.signal })).json();
-    if (s.faulted) throw new Error('Horde: генерация не удалась');
+    if (s.faulted) throw new Error(tr('Horde: генерация не удалась'));
     if (s.done && s.generations?.length) {
       const g = s.generations[0];
       return { text: g.text ?? '', reasoning: '', model: g.model ?? '' };
     }
-    req.onDelta?.('', `В очереди: позиция ${s.queue_position ?? '?'}, ожидание ~${s.wait_time ?? '?'} с`);
+    req.onDelta?.('', tr('В очереди: позиция {0}, ожидание ~{1} с', s.queue_position ?? '?', s.wait_time ?? '?'));
   }
   throw new DOMException('Aborted', 'AbortError');
 }
@@ -508,7 +509,7 @@ export async function fetchModels(api: ApiSettings, signal?: AbortSignal): Promi
   switch (api.main) {
     case 'chat': {
       const { base, key } = chatEndpoint(api);
-      if (!base) throw new Error('Не указан адрес API');
+      if (!base) throw new Error(tr('Не указан адрес API'));
       if (api.chatSource === 'claude') {
         const res = await ensureOk(
           await fetch(`${base}/models?limit=100`, {
@@ -557,10 +558,10 @@ export async function fetchModels(api: ApiSettings, signal?: AbortSignal): Promi
       const j = await (await ensureOk(await fetch(`${HORDE}/status/models?type=text`, { signal }))).json();
       return (j as any[])
         .sort((a, b) => b.count - a.count)
-        .map((m) => ({ id: m.name, name: `${m.name} · ${m.count} воркер(ов)`, context: m.max_context_length }));
+        .map((m) => ({ id: m.name, name: tr('{0} · {1} воркер(ов)', m.name, m.count), context: m.max_context_length }));
     }
     case 'novel': {
-      if (!api.keys.novel) throw new Error('Нужен ключ NovelAI');
+      if (!api.keys.novel) throw new Error(tr('Нужен ключ NovelAI'));
       await ensureOk(
         await fetch('https://api.novelai.net/user/subscription', { headers: { Authorization: `Bearer ${api.keys.novel}` }, signal }),
       );

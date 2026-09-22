@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 // Генерация ответов: обычная, свайп, регенерация, продолжение, «ответ за меня», тихие запросы, групповые чаты.
 import type { Chat, Message } from '../types';
 import { activePreset, currentPersona, getState, setState, toast, updateChat, updateMessage, userName } from '../store';
@@ -71,7 +72,7 @@ export async function sendMessage(raw: string, opts: { generate?: boolean; asSys
   const s = getState();
   const chat = s.chats[s.activeChatId];
   if (!chat) {
-    toast('Сначала выберите персонажа или чат', 'error');
+    toast(tr('Сначала выберите персонажа или чат'), 'error');
     return;
   }
   let text = raw.trim();
@@ -81,7 +82,7 @@ export async function sendMessage(raw: string, opts: { generate?: boolean; asSys
       original = text;
       text = await translateText(text, s.ext.translate.inputTarget);
     } catch (e) {
-      toast('Перевод ввода не удался: ' + (e as Error).message, 'error');
+      toast(tr('Перевод ввода не удался: ') + (e as Error).message, 'error');
       original = undefined;
     }
   }
@@ -90,7 +91,7 @@ export async function sendMessage(raw: string, opts: { generate?: boolean; asSys
     const persona = currentPersona(s, chat);
     const msg = makeMessage({
       text,
-      name: opts.asSystem ? 'Рассказчик' : userName(s, chat),
+      name: opts.asSystem ? tr('Рассказчик') : userName(s, chat),
       isUser: !opts.asSystem,
       isSystem: opts.asSystem,
       personaId: persona?.id,
@@ -120,7 +121,7 @@ export async function runGeneration(
 ): Promise<boolean> {
   const s0 = getState();
   if (s0.gen) {
-    toast('Генерация уже идёт', 'info');
+    toast(tr('Генерация уже идёт'), 'info');
     return false;
   }
   const chatId = o.chatId ?? s0.activeChatId;
@@ -135,7 +136,7 @@ export async function runGeneration(
   if (kind === 'swipe' || kind === 'regenerate') {
     target = o.messageId ? chat.messages.find((m) => m.id === o.messageId) : lastNonSystem(chat);
     if (!target || target.isUser) {
-      toast('Нечего перегенерировать', 'info');
+      toast(tr('Нечего перегенерировать'), 'info');
       return false;
     }
     history = chat.messages.slice(0, chat.messages.indexOf(target));
@@ -157,11 +158,11 @@ export async function runGeneration(
   try {
     built = buildPrompt(s0, { chat, kind, charId, quietPrompt: o.quietPrompt, history });
   } catch (e) {
-    toast('Ошибка сборки промпта: ' + (e as Error).message, 'error');
+    toast(tr('Ошибка сборки промпта: ') + (e as Error).message, 'error');
     return false;
   }
   const char = built.char ?? speakingCharacter(s0, chat, charId);
-  const uname = built.env.user ?? 'Вы';
+  const uname = built.env.user ?? tr('Вы');
 
   // Для Claude «продолжение» передаём как префилл ассистента
   if (kind === 'continue' && built.messages && s0.api.main === 'chat' && s0.api.chatSource === 'claude' && built.prefill) {
@@ -182,7 +183,7 @@ export async function runGeneration(
   const startedAt = Date.now();
   const isQuietLike = kind === 'impersonate' || kind === 'quiet';
   if (!isQuietLike && kind === 'normal') {
-    const m = makeMessage({ text: '', name: char?.name ?? 'Персонаж', isUser: false, charId: char?.id });
+    const m = makeMessage({ text: '', name: char?.name ?? tr('Персонаж'), isUser: false, charId: char?.id });
     m.swipes = [''];
     messageId = m.id;
     updateChat(chatId, (c) => void c.messages.push(m));
@@ -240,7 +241,7 @@ export async function runGeneration(
       return true;
     }
     if (!text.trim() && kind !== 'continue') {
-      toast('Модель вернула пустой ответ', 'error');
+      toast(tr('Модель вернула пустой ответ'), 'error');
       rollbackEmpty(chatId, messageId, kind);
       return false;
     }
@@ -275,7 +276,7 @@ export async function runGeneration(
       } else rollbackEmpty(chatId, messageId, kind);
       return false;
     }
-    toast('Ошибка генерации: ' + err.message, 'error');
+    toast(tr('Ошибка генерации: ') + err.message, 'error');
     const partial = getState().streaming;
     if (partial && partial.messageId === messageId && partial.text.trim()) {
       updateMessage(chatId, messageId!, (m) => {
@@ -360,7 +361,7 @@ export async function summarizeChat(chatId?: string): Promise<boolean> {
     const res = await quietGenerate(prompt, id);
     if (res && res.trim()) {
       updateChat(id, (c) => void (c.summary = res.trim()));
-      toast('Пересказ обновлён', 'success');
+      toast(tr('Пересказ обновлён'), 'success');
       return true;
     }
     return false;

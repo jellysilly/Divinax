@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import type { ReactNode } from 'react';
 import {
   ALargeSmall,
@@ -5,6 +6,7 @@ import {
   Box,
   ChevronRight,
   CircleHelp,
+  Languages,
   MessageCircle,
   Plug,
   SlidersHorizontal,
@@ -17,7 +19,7 @@ import { activePreset, currentPersona, openModal, setState, setTab, useStore } f
 import type { TabId } from '../types';
 import { fmtNum } from '../lib/util';
 import { sourceName } from '../lib/api';
-import { Avatar, Divider, Star } from './ui';
+import { Avatar, Divider, Star, Switch } from './ui';
 
 export const NAV: { id: TabId; label: string; sub: string; icon: ReactNode }[] = [
   { id: 'chat', label: 'Чат', sub: 'текущая сцена', icon: <MessageCircle size={18} strokeWidth={1.6} /> },
@@ -63,14 +65,14 @@ export function StatusPill({ compact }: { compact?: boolean }) {
   const api = useStore((s) => s.api);
   const last = useStore((s) => s.lastPrompt);
   const max = useStore((s) => activePreset(s).maxContext);
-  const label = conn.status === 'ok' ? 'Подключено' : conn.status === 'connecting' ? 'Подключение…' : conn.status === 'error' ? 'Ошибка' : 'Не подключено';
+  const label = conn.status === 'ok' ? tr('Подключено') : conn.status === 'connecting' ? tr('Подключение…') : conn.status === 'error' ? tr('Ошибка') : tr('Не подключено');
   return (
     <button type="button" className="status-pill" onClick={() => setTab('api')} title={conn.message}>
       <span className={`status-dot ${conn.status}`} />
       <span style={{ minWidth: 0 }}>
         <b>{compact ? `${label} · ${sourceName(api)}` : label}</b>
         <small>
-          {fmtNum(last?.tokens ?? 0)} / {fmtNum(max)} токенов{compact ? ' контекста' : ''}
+          {fmtNum(last?.tokens ?? 0)} / {fmtNum(max)} {tr('токенов')}{compact ? tr(' контекста') : ''}
         </small>
       </span>
     </button>
@@ -81,11 +83,11 @@ export function Header() {
   const tab = useStore((s) => s.tab);
   return (
     <header className="header">
-      <button type="button" className="logo" onClick={() => setTab('chat')} aria-label="Divinax — на главную">
+      <button type="button" className="logo" onClick={() => setTab('chat')} aria-label={tr('Divinax — на главную')}>
         <Star size={20} />
         <span className="logo-text">Divinax</span>
       </button>
-      <nav className="nav" aria-label="Разделы">
+      <nav className="nav" aria-label={tr('Разделы')}>
         {NAV.map((n) => (
           <button
             key={n.id}
@@ -93,10 +95,10 @@ export function Header() {
             className={`nav-item ${tab === n.id ? 'active' : ''}`}
             aria-current={tab === n.id ? 'page' : undefined}
             onClick={() => setTab(n.id)}
-            title={n.label}
+            title={tr(n.label)}
           >
             <span className="nav-ico">{n.icon}</span>
-            <span className="lbl">{n.label}</span>
+            <span className="lbl">{tr(n.label)}</span>
           </button>
         ))}
       </nav>
@@ -109,12 +111,29 @@ export function Footer() {
   const tab = useStore((s) => s.tab);
   return (
     <footer className="footer">
-      <span className="footer-hint">{HINTS[tab]}</span>
-      <button type="button" className="help-link" onClick={() => openModal('help')}>
-        <CircleHelp size={15} strokeWidth={1.5} />
-        <span>Справка и макросы</span>
-      </button>
+      <span className="footer-hint">{tr(HINTS[tab])}</span>
+      <div className="row" style={{ gap: 18, flex: 'none' }}>
+        <LangToggle />
+        <button type="button" className="help-link" onClick={() => openModal('help')}>
+          <CircleHelp size={15} strokeWidth={1.5} />
+          <span>{tr('Справка и макросы')}</span>
+        </button>
+      </div>
     </footer>
+  );
+}
+
+/** Переключатель EN/RU. */
+export function LangToggle({ bare }: { bare?: boolean }) {
+  const lang = useStore((s) => s.ui.language);
+  const set = (v: boolean) => setState((s) => ({ ui: { ...s.ui, language: v ? 'en' : 'ru' } }));
+  if (bare) return <Switch checked={lang === 'en'} onChange={set} />;
+  return (
+    <label className="help-link" style={{ cursor: 'pointer' }} title={tr('Английский интерфейс')}>
+      <Languages size={15} strokeWidth={1.5} />
+      <span>English</span>
+      <Switch checked={lang === 'en'} onChange={set} />
+    </label>
   );
 }
 
@@ -128,17 +147,17 @@ export function MobileMenu() {
           <Star size={20} />
           <span className="logo-text">Divinax</span>
         </div>
-        <button type="button" className="menu-btn" style={{ width: 48, height: 48 }} aria-label="Закрыть меню" onClick={() => setState({ mobileMenu: false })}>
+        <button type="button" className="menu-btn" style={{ width: 48, height: 48 }} aria-label={tr('Закрыть меню')} onClick={() => setState({ mobileMenu: false })}>
           <X size={20} />
         </button>
       </div>
-      <Divider title="Разделы" />
+      <Divider title={tr('Разделы')} />
       <div className="m-menu-grid">
         {NAV.map((n) => (
           <button key={n.id} type="button" className={`m-tile ${tab === n.id ? 'on' : ''}`} onClick={() => setTab(n.id)}>
             <span className="nav-ico">{n.icon}</span>
-            <b>{n.label}</b>
-            <small>{n.sub}</small>
+            <b>{tr(n.label)}</b>
+            <small>{tr(n.sub)}</small>
           </button>
         ))}
       </div>
@@ -146,14 +165,19 @@ export function MobileMenu() {
       <button type="button" className="m-row" onClick={() => setTab('persona')}>
         <Avatar src={persona?.avatar} name={persona?.name ?? '?'} size={38} />
         <span className="grow">
-          <b style={{ display: 'block', fontSize: 14 }}>Вы играете за: {persona?.name ?? '—'}</b>
-          <small className="muted">сменить персону</small>
+          <b style={{ display: 'block', fontSize: 14 }}>{tr('Вы играете за:')} {persona?.name ?? '—'}</b>
+          <small className="muted">{tr('сменить персону')}</small>
         </span>
         <ChevronRight size={16} className="muted" />
       </button>
+      <div className="m-row">
+        <Languages size={18} />
+        <span className="grow">{tr('Английский интерфейс')}</span>
+        <LangToggle bare />
+      </div>
       <button type="button" className="m-row" onClick={() => openModal('help')}>
         <CircleHelp size={18} />
-        <span className="grow">Справка и макросы</span>
+        <span className="grow">{tr('Справка и макросы')}</span>
         <ChevronRight size={16} className="muted" />
       </button>
     </div>
@@ -170,10 +194,10 @@ function StatusRow() {
       <span className={`status-dot ${conn.status}`} />
       <span className="grow">
         <b style={{ display: 'block', fontSize: 14 }}>
-          {conn.status === 'ok' ? 'Подключено' : conn.status === 'error' ? 'Ошибка подключения' : 'Не подключено'} · {sourceName(api)}
+          {conn.status === 'ok' ? tr('Подключено') : conn.status === 'error' ? tr('Ошибка подключения') : tr('Не подключено')} · {sourceName(api)}
         </b>
         <small className="muted">
-          {fmtNum(last?.tokens ?? 0)} / {fmtNum(max)} токенов контекста
+          {fmtNum(last?.tokens ?? 0)} / {fmtNum(max)} {tr('токенов контекста')}
         </small>
       </span>
       <ChevronRight size={16} className="muted" />

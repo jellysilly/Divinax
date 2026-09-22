@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 // Генерация изображений через бесплатный Pollinations (без ключа).
 import { getState, toast, updateChat } from '../store';
 import { makeMessage } from './chats';
@@ -19,13 +20,13 @@ export async function generateImage(chatId: string, kind: 'scene' | 'char' | 'fr
   const cfg = s.ext.imageGen;
   let desc = free ?? '';
   if (kind !== 'free') {
-    toast('Составляю описание сцены…');
-    const res = await quietGenerate(PROMPTS[kind], chatId);
+    toast(tr('Составляю описание сцены…'));
+    const res = await quietGenerate(tr(PROMPTS[kind]), chatId);
     if (!res) return;
     desc = res.replace(/^["'\s]+|["'\s]+$/g, '');
   }
   const url = pollinationsUrl(cfg.stylePrefix + desc, cfg.width, cfg.height);
-  const msg = makeMessage({ text: `*${desc.slice(0, 300)}*`, name: 'Иллюстрация', isUser: false, isSystem: true, images: [url] });
+  const msg = makeMessage({ text: `*${desc.slice(0, 300)}*`, name: tr('Иллюстрация'), isUser: false, isSystem: true, images: [url] });
   msg.hidden = true;
   updateChat(chatId, (c) => void c.messages.push(msg));
 }

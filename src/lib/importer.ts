@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 // Универсальный импорт: карточки PNG/JSON, лорбуки, чаты JSONL.
 import { activeChat, getState, openModal, setState, toast, upsertCharacter, upsertLorebook } from '../store';
 import { importCharacterFile } from './cards';
@@ -11,9 +12,9 @@ export async function importFiles(files: File[]) {
       const name = f.name.toLowerCase();
       if (name.endsWith('.jsonl')) {
         const c = activeChat(getState());
-        if (!c) throw new Error('Откройте чат персонажа, чтобы импортировать историю');
+        if (!c) throw new Error(tr('Откройте чат персонажа, чтобы импортировать историю'));
         importChatText(await f.text(), c.ownerType, c.ownerId, f.name);
-        toast(`Чат «${f.name}» импортирован`, 'success');
+        toast(tr('Чат «{0}» импортирован', f.name), 'success');
         continue;
       }
       if (name.endsWith('.json')) {
@@ -28,14 +29,14 @@ export async function importFiles(files: File[]) {
         if (book) upsertLorebook(book);
         upsertCharacter(char);
         setState({ editingCharId: char.id });
-        toast(`Персонаж «${char.name}» импортирован${book ? ' вместе с лорбуком' : ''}`, 'success');
+        toast(tr('Персонаж «{0}» импортирован{1}', char.name, book ? tr(' вместе с лорбуком') : ''), 'success');
         continue;
       }
       if (/\.(jpe?g|webp|gif|avif)$/.test(name)) {
-        openModal('info', 'Картинку можно загрузить как фон во вкладке «Интерфейс» или как аватар в карточке.');
+        openModal('info', tr('Картинку можно загрузить как фон во вкладке «Интерфейс» или как аватар в карточке.'));
         continue;
       }
-      throw new Error('Неизвестный формат');
+      throw new Error(tr('Неизвестный формат'));
     } catch (e) {
       toast(`${f.name}: ${(e as Error).message}`, 'error');
     }
@@ -54,6 +55,6 @@ export function importLorebookJson(j: Record<string, unknown>, fallbackName: str
     updatedAt: now,
   });
   setState({ editingLorebookId: id });
-  toast(`Лорбук «${String(j.name || fallbackName)}» импортирован`, 'success');
+  toast(tr('Лорбук «{0}» импортирован', String(j.name || fallbackName)), 'success');
   return id;
 }

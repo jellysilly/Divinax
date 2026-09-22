@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 // Операции с чатами: создание, ветки, импорт/экспорт (JSONL SillyTavern), приветствия.
 import type { Chat, Message } from '../types';
 import { chatsOf, currentPersona, getState, newChatObject, setState, toast, updateChat, userName } from '../store';
@@ -104,7 +105,7 @@ export function branchChat(chatId: string, messageId: string, asCheckpoint = fal
   const copy: Chat = {
     ...structuredClone(src),
     id: uid(),
-    name: name ?? `${asCheckpoint ? 'Контрольная точка' : 'Ветка'}: ${src.name}`,
+    name: name ?? `${asCheckpoint ? tr('Контрольная точка') : tr('Ветка')}: ${src.name}`,
     messages: structuredClone(src.messages.slice(0, idx + 1)),
     branchOf: { chatId, messageId },
     createdAt: now,
@@ -115,10 +116,10 @@ export function branchChat(chatId: string, messageId: string, asCheckpoint = fal
     updateChat(chatId, (c) => {
       c.messages = c.messages.map((m) => (m.id === messageId ? { ...m, bookmark: copy.id } : m));
     });
-    toast(`Контрольная точка «${copy.name}» сохранена`, 'success');
+    toast(tr('Контрольная точка «{0}» сохранена', copy.name), 'success');
   } else {
     openChat(copy.id);
-    toast('Создана ветка чата', 'success');
+    toast(tr('Создана ветка чата'), 'success');
   }
   return copy.id;
 }
@@ -158,7 +159,7 @@ export function exportChat(chatId: string, format: 'jsonl' | 'txt' = 'jsonl') {
   download(`${safeName(owner ?? 'chat')} - ${safeName(c.name)}.jsonl`, lines.join('\n'), 'application/jsonl');
 }
 
-export function importChatText(text: string, ownerType: 'char' | 'group', ownerId: string, fileName = 'Импорт'): string {
+export function importChatText(text: string, ownerType: 'char' | 'group', ownerId: string, fileName = tr('Импорт')): string {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
   const chat = newChatObject(ownerType, ownerId, fileName.replace(/\.jsonl?$/i, ''));
   const s = getState();

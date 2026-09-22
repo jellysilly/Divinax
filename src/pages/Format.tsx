@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { Copy, Download, Trash2, Upload } from 'lucide-react';
 import { setState, toast, useStore } from '../store';
 import type { ContextTemplate, FormatSettings, InstructTemplate, SysPromptPreset } from '../types';
@@ -26,24 +27,24 @@ function PresetBar<T extends { id: string; name: string }>({
   const cur = items.find((i) => i.id === value);
   return (
     <div className="row">
-      <Select className="grow" value={value} onChange={onSelect} options={items.map((i) => ({ value: i.id, label: i.name }))} />
-      <IconBtn size="lg" icon={<Copy size={15} />} label="Дублировать" onClick={onDuplicate} />
+      <Select className="grow" value={value} onChange={onSelect} options={items.map((i) => ({ value: i.id, label: tr(i.name) }))} />
+      <IconBtn size="lg" icon={<Copy size={15} />} label={tr('Дублировать')} onClick={onDuplicate} />
       <IconBtn
         size="lg"
         icon={<Upload size={15} />}
-        label="Импорт (JSON)"
+        label={tr('Импорт (JSON)')}
         onClick={async () => {
           const [f] = await pickFiles('.json');
           if (!f) return;
           try {
             onImport(JSON.parse(await f.text()), f.name.replace(/\.json$/i, ''));
           } catch (e) {
-            toast('Ошибка импорта: ' + (e as Error).message, 'error');
+            toast(tr('Ошибка импорта: ') + (e as Error).message, 'error');
           }
         }}
       />
-      <IconBtn size="lg" icon={<Download size={15} />} label="Экспорт" onClick={() => cur && download(`${safeName(cur.name)}.json`, JSON.stringify(cur, null, 2))} />
-      <IconBtn size="lg" className="danger" icon={<Trash2 size={15} />} label={`Удалить ${exportName}`} disabled={items.length < 2} onClick={onDelete} />
+      <IconBtn size="lg" icon={<Download size={15} />} label={tr('Экспорт')} onClick={() => cur && download(`${safeName(cur.name)}.json`, JSON.stringify(cur, null, 2))} />
+      <IconBtn size="lg" className="danger" icon={<Trash2 size={15} />} label={tr('Удалить {0}', exportName)} disabled={items.length < 2} onClick={onDelete} />
     </div>
   );
 }
@@ -63,16 +64,16 @@ export function FormatPage() {
 
   return (
     <div className="cols wrap-md">
-      <Panel className="fill" style={{ flex: '1 1 0' }} title="Шаблон контекста">
+      <Panel className="fill" style={{ flex: '1 1 0' }} title={tr('Шаблон контекста')}>
         <div className="body scroll grow" style={{ paddingRight: 4 }}>
-          <Field label="Шаблон">
+          <Field label={tr('Шаблон')}>
             <PresetBar
               items={contexts}
               value={ctx.id}
-              exportName="шаблон"
+              exportName={tr('шаблон')}
               onSelect={(id) => setFormat({ contextId: id })}
               onDuplicate={() => {
-                const c = { ...ctx, id: uid(), name: ctx.name + ' (копия)' };
+                const c = { ...ctx, id: uid(), name: ctx.name + tr(' (копия)') };
                 setState((s) => ({ contextTemplates: [...s.contextTemplates, c], format: { ...s.format, contextId: c.id } }));
               }}
               onDelete={() => setState((s) => {
@@ -94,35 +95,35 @@ export function FormatPage() {
               }}
             />
           </Field>
-          <Field label="Строка истории" hint="{{#if description}}…{{/if}} — блок выводится, только если поле не пустое">
+          <Field label={tr('Строка истории')} hint={tr('{{#if description}}…{{/if}} — блок выводится, только если поле не пустое')}>
             <LazyTextarea className="textarea mono" rows={9} value={ctx.storyString} onCommit={(v) => setCtx({ storyString: v })} />
           </Field>
           <div className="grid2">
-            <Field label="Разделитель примеров">
+            <Field label={tr('Разделитель примеров')}>
               <LazyInput className="input mono" value={ctx.exampleSeparator} onCommit={(v) => setCtx({ exampleSeparator: v })} />
             </Field>
-            <Field label="Начало чата">
+            <Field label={tr('Начало чата')}>
               <LazyInput className="input mono" value={ctx.chatStart} onCommit={(v) => setCtx({ chatStart: v })} />
             </Field>
           </div>
           <div className="col" style={{ gap: 10 }}>
-            <Switch label="Сворачивать пустые строки" checked={ctx.collapseNewlines} onChange={(v) => setCtx({ collapseNewlines: v })} />
-            <Switch label="Всегда добавлять имя персонажа" checked={ctx.alwaysAddCharName} onChange={(v) => setCtx({ alwaysAddCharName: v })} />
-            <Switch label="Обрезать незаконченные предложения" checked={ctx.trimIncomplete} onChange={(v) => setCtx({ trimIncomplete: v })} />
+            <Switch label={tr('Сворачивать пустые строки')} checked={ctx.collapseNewlines} onChange={(v) => setCtx({ collapseNewlines: v })} />
+            <Switch label={tr('Всегда добавлять имя персонажа')} checked={ctx.alwaysAddCharName} onChange={(v) => setCtx({ alwaysAddCharName: v })} />
+            <Switch label={tr('Обрезать незаконченные предложения')} checked={ctx.trimIncomplete} onChange={(v) => setCtx({ trimIncomplete: v })} />
           </div>
         </div>
       </Panel>
 
-      <Panel className="fill" style={{ flex: '1 1 0' }} title="Режим Instruct" actions={<Switch checked={f.instructEnabled} onChange={(v) => setFormat({ instructEnabled: v })} />}>
+      <Panel className="fill" style={{ flex: '1 1 0' }} title={tr('Режим Instruct')} actions={<Switch checked={f.instructEnabled} onChange={(v) => setFormat({ instructEnabled: v })} />}>
         <div className="body scroll grow" style={{ paddingRight: 4, opacity: f.instructEnabled ? 1 : 0.6 }}>
-          <Field label="Пресет">
+          <Field label={tr('Пресет')}>
             <PresetBar
               items={instructs}
               value={ins.id}
-              exportName="пресет"
+              exportName={tr('пресет')}
               onSelect={(id) => setFormat({ instructId: id })}
               onDuplicate={() => {
-                const c = { ...ins, id: uid(), name: ins.name + ' (копия)' };
+                const c = { ...ins, id: uid(), name: ins.name + tr(' (копия)') };
                 setState((s) => ({ instructTemplates: [...s.instructTemplates, c], format: { ...s.format, instructId: c.id } }));
               }}
               onDelete={() => setState((s) => {
@@ -148,35 +149,35 @@ export function FormatPage() {
             />
           </Field>
           <div className="grid2">
-            <SeqField label="Префикс системы" value={ins.systemPrefix} onCommit={(v) => setIns({ systemPrefix: v })} />
-            <SeqField label="Суффикс системы" value={ins.systemSuffix} onCommit={(v) => setIns({ systemSuffix: v })} />
-            <SeqField label="Префикс пользователя" value={ins.userPrefix} onCommit={(v) => setIns({ userPrefix: v })} />
-            <SeqField label="Суффикс пользователя" value={ins.userSuffix} onCommit={(v) => setIns({ userSuffix: v })} />
-            <SeqField label="Префикс ассистента" value={ins.assistantPrefix} onCommit={(v) => setIns({ assistantPrefix: v })} />
-            <SeqField label="Суффикс ассистента" value={ins.assistantSuffix} onCommit={(v) => setIns({ assistantSuffix: v })} />
-            <SeqField label="Стоп-последовательность" value={ins.stopSequence} onCommit={(v) => setIns({ stopSequence: v })} />
+            <SeqField label={tr('Префикс системы')} value={ins.systemPrefix} onCommit={(v) => setIns({ systemPrefix: v })} />
+            <SeqField label={tr('Суффикс системы')} value={ins.systemSuffix} onCommit={(v) => setIns({ systemSuffix: v })} />
+            <SeqField label={tr('Префикс пользователя')} value={ins.userPrefix} onCommit={(v) => setIns({ userPrefix: v })} />
+            <SeqField label={tr('Суффикс пользователя')} value={ins.userSuffix} onCommit={(v) => setIns({ userSuffix: v })} />
+            <SeqField label={tr('Префикс ассистента')} value={ins.assistantPrefix} onCommit={(v) => setIns({ assistantPrefix: v })} />
+            <SeqField label={tr('Суффикс ассистента')} value={ins.assistantSuffix} onCommit={(v) => setIns({ assistantSuffix: v })} />
+            <SeqField label={tr('Стоп-последовательность')} value={ins.stopSequence} onCommit={(v) => setIns({ stopSequence: v })} />
           </div>
           <div className="col" style={{ gap: 10 }}>
-            <Switch label="Добавлять имена к сообщениям" checked={ins.names} onChange={(v) => setIns({ names: v })} />
-            <Switch label="Переносы строк вокруг последовательностей" checked={ins.wrap} onChange={(v) => setIns({ wrap: v })} />
-            <Switch label="Применять к Chat Completion" checked={f.instructForChat} onChange={(v) => setFormat({ instructForChat: v })} hint="промпт собирается одной строкой в сообщении" />
+            <Switch label={tr('Добавлять имена к сообщениям')} checked={ins.names} onChange={(v) => setIns({ names: v })} />
+            <Switch label={tr('Переносы строк вокруг последовательностей')} checked={ins.wrap} onChange={(v) => setIns({ wrap: v })} />
+            <Switch label={tr('Применять к Chat Completion')} checked={f.instructForChat} onChange={(v) => setFormat({ instructForChat: v })} hint={tr('промпт собирается одной строкой в сообщении')} />
           </div>
           <div className="sub">
-            Режим Instruct нужен для Text Completion: он оборачивает реплики в формат, на котором обучена модель. \n в полях — перенос строки.
+            {tr('Режим Instruct нужен для Text Completion: он оборачивает реплики в формат, на котором обучена модель. \\n в полях — перенос строки.')}
           </div>
         </div>
       </Panel>
 
-      <Panel className="fill" style={{ flex: '1 1 0' }} title="Системный промпт" actions={<Switch checked={f.sysPromptEnabled} onChange={(v) => setFormat({ sysPromptEnabled: v })} />}>
+      <Panel className="fill" style={{ flex: '1 1 0' }} title={tr('Системный промпт')} actions={<Switch checked={f.sysPromptEnabled} onChange={(v) => setFormat({ sysPromptEnabled: v })} />}>
         <div className="body scroll grow" style={{ paddingRight: 4 }}>
-          <Field label="Пресет">
+          <Field label={tr('Пресет')}>
             <PresetBar
               items={sysPrompts}
               value={sys.id}
-              exportName="промпт"
+              exportName={tr('промпт')}
               onSelect={(id) => setFormat({ sysPromptId: id })}
               onDuplicate={() => {
-                const c = { ...sys, id: uid(), name: sys.name + ' (копия)' };
+                const c = { ...sys, id: uid(), name: sys.name + tr(' (копия)') };
                 setState((s) => ({ sysPrompts: [...s.sysPrompts, c], format: { ...s.format, sysPromptId: c.id } }));
               }}
               onDelete={() => setState((s) => {
@@ -191,21 +192,21 @@ export function FormatPage() {
           </Field>
           <LazyTextarea className="textarea serif" rows={7} value={sys.content} onCommit={(v) => setSys({ content: v })} />
           <div className="sub" style={{ marginTop: -8 }}>
-            В Chat Completion заменяет «Основной промпт» менеджера промптов, если включён.
+            {tr('В Chat Completion заменяет «Основной промпт» менеджера промптов, если включён.')}
           </div>
           <Divider />
-          <Field label="Токенизатор">
+          <Field label={tr('Токенизатор')}>
             <Select
               value={f.tokenizer}
               onChange={(v) => setFormat({ tokenizer: v })}
               options={[
-                { value: 'auto', label: 'Лучшее совпадение (авто)' },
-                { value: 'chars', label: 'По символам (~4 на токен)' },
-                { value: 'words', label: 'По словам' },
+                { value: 'auto', label: tr('Лучшее совпадение (авто)') },
+                { value: 'chars', label: tr('По символам (~4 на токен)') },
+                { value: 'words', label: tr('По словам') },
               ]}
             />
           </Field>
-          <Field label="Свои стоп-строки" hint="JSON-массив строк">
+          <Field label={tr('Свои стоп-строки')} hint={tr('JSON-массив строк')}>
             <LazyInput
               className="input mono"
               value={f.customStops}
@@ -214,21 +215,21 @@ export function FormatPage() {
                   JSON.parse(v || '[]');
                   setFormat({ customStops: v });
                 } catch {
-                  toast('Нужен JSON-массив, например ["\\n{{user}}:"]', 'error');
+                  toast(tr('Нужен JSON-массив, например ["\\n{{user}}:"]'), 'error');
                 }
               }}
             />
           </Field>
           <div className="grid2">
-            <Field label="Начало рассуждений">
+            <Field label={tr('Начало рассуждений')}>
               <LazyInput className="input mono" value={f.reasoningPrefix} onCommit={(v) => setFormat({ reasoningPrefix: v })} />
             </Field>
-            <Field label="Конец рассуждений">
+            <Field label={tr('Конец рассуждений')}>
               <LazyInput className="input mono" value={f.reasoningSuffix} onCommit={(v) => setFormat({ reasoningSuffix: v })} />
             </Field>
           </div>
-          <Switch label="Извлекать рассуждения из ответа" checked={f.autoParseReasoning} onChange={(v) => setFormat({ autoParseReasoning: v })} />
-          <Switch label="Показывать рассуждения в чате" checked={f.showReasoning} onChange={(v) => setFormat({ showReasoning: v })} />
+          <Switch label={tr('Извлекать рассуждения из ответа')} checked={f.autoParseReasoning} onChange={(v) => setFormat({ autoParseReasoning: v })} />
+          <Switch label={tr('Показывать рассуждения в чате')} checked={f.showReasoning} onChange={(v) => setFormat({ showReasoning: v })} />
         </div>
       </Panel>
     </div>

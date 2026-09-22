@@ -1,3 +1,4 @@
+import { locale, tr } from './i18n';
 // Макросы в стиле SillyTavern: {{char}}, {{user}}, {{random::a::b}}, {{roll:2d6}}, {{getvar::x}} …
 
 export interface MacroEnv {
@@ -27,7 +28,6 @@ export interface MacroEnv {
   extra?: Record<string, string>;
 }
 
-const WEEKDAYS = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
 
 function roll(expr: string): string {
   const m = /^\s*(\d*)d(\d+)\s*([+-]\s*\d+)?\s*$/i.exec(expr);
@@ -50,13 +50,13 @@ function splitList(body: string): string[] {
 }
 
 function idle(since?: number): string {
-  if (!since) return 'только что';
+  if (!since) return tr('только что');
   const min = Math.round((Date.now() - since) / 60000);
-  if (min < 1) return 'меньше минуты';
-  if (min < 60) return `${min} мин.`;
+  if (min < 1) return tr('меньше минуты');
+  if (min < 60) return tr('{0} мин.', min);
   const h = Math.round(min / 60);
-  if (h < 24) return `${h} ч.`;
-  return `${Math.round(h / 24)} дн.`;
+  if (h < 24) return tr('{0} ч.', h);
+  return tr('{0} дн.', Math.round(h / 24));
 }
 
 // Стабильный «pick»: одинаковый результат для одного и того же текста
@@ -111,9 +111,9 @@ export function substituteMacros(text: string, env: MacroEnv): string {
         newline: '\n',
         trim: '\u0000TRIM\u0000',
         noop: '',
-        time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-        date: now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }),
-        weekday: WEEKDAYS[now.getDay()],
+        time: now.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' }),
+        date: now.toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: 'numeric' }),
+        weekday: now.toLocaleDateString(locale(), { weekday: 'long' }),
         isotime: now.toTimeString().slice(0, 5),
         isodate: now.toISOString().slice(0, 10),
         idle_duration: idle(env.idleSince),

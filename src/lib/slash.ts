@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 // Slash-команды в духе STscript: /sys, /continue, /sum, /bg, /persona …
 import { activeChat, getState, openModal, setState, setTab, toast, updateChat } from '../store';
 import { runGeneration, sendMessage, stopGeneration, summarizeChat } from './generate';
@@ -17,7 +18,7 @@ const pipe: { value: string } = { value: '' };
 
 function chatOrThrow() {
   const c = activeChat(getState());
-  if (!c) throw new Error('Нет открытого чата');
+  if (!c) throw new Error(tr('Нет открытого чата'));
   return c;
 }
 
@@ -38,7 +39,7 @@ export const COMMANDS: Cmd[] = [
     help: '/sendas name=Имя текст — сообщение от лица персонажа',
     run: (a) => {
       const m = /name=("[^"]+"|\S+)\s*([\s\S]*)/.exec(a);
-      if (!m) throw new Error('Формат: /sendas name=Имя текст');
+      if (!m) throw new Error(tr('Формат: /sendas name=Имя текст'));
       const name = m[1].replace(/"/g, '');
       const c = chatOrThrow();
       const ch = Object.values(getState().characters).find((x) => x.name === name);
@@ -87,8 +88,9 @@ export const COMMANDS: Cmd[] = [
     help: '/bg название — сменить фон',
     run: (a) => {
       const s = getState();
-      const bg = s.ui.backgrounds.find((b) => b.name.toLowerCase().includes(a.toLowerCase()));
-      if (!bg) throw new Error('Фон не найден');
+      const q = a.trim().toLowerCase();
+      const bg = s.ui.backgrounds.find((b) => b.name.toLowerCase().includes(q) || tr(b.name).toLowerCase().includes(q));
+      if (!bg) throw new Error(tr('Фон не найден'));
       const c = activeChat(s);
       if (c && s.ui.perChatBg) updateChat(c.id, (cc) => void (cc.background = bg.id));
       else setState((st) => ({ ui: { ...st.ui, activeBg: bg.id } }));
@@ -100,10 +102,10 @@ export const COMMANDS: Cmd[] = [
     run: (a) => {
       const s = getState();
       const p = Object.values(s.personas).find((x) => x.name.toLowerCase() === a.toLowerCase());
-      if (!p) throw new Error('Персона не найдена');
+      if (!p) throw new Error(tr('Персона не найдена'));
       const c = chatOrThrow();
       updateChat(c.id, (cc) => void (cc.personaId = p.id));
-      toast(`Теперь вы — ${p.name}`, 'success');
+      toast(tr('Теперь вы — {0}', p.name), 'success');
     },
   },
   {
@@ -112,7 +114,7 @@ export const COMMANDS: Cmd[] = [
     run: (a) => {
       const s = getState();
       const ch = Object.values(s.characters).find((x) => x.name.toLowerCase().startsWith(a.toLowerCase()));
-      if (!ch) throw new Error('Персонаж не найден');
+      if (!ch) throw new Error(tr('Персонаж не найден'));
       openOwner('char', ch.id);
     },
   },
@@ -121,7 +123,7 @@ export const COMMANDS: Cmd[] = [
     help: '/setvar key=имя значение — переменная чата',
     run: (a) => {
       const m = /key=(\S+)\s*([\s\S]*)/.exec(a);
-      if (!m) throw new Error('Формат: /setvar key=имя значение');
+      if (!m) throw new Error(tr('Формат: /setvar key=имя значение'));
       const c = chatOrThrow();
       updateChat(c.id, (cc) => void (cc.vars = { ...cc.vars, [m[1]]: m[2] }));
     },
@@ -157,7 +159,7 @@ export const COMMANDS: Cmd[] = [
 function hideRange(arg: string, hidden: boolean) {
   const c = chatOrThrow();
   const [a, b] = arg.split('-').map((x) => parseInt(x.trim(), 10));
-  if (!Number.isFinite(a)) throw new Error('Укажите номер или диапазон: 3-5');
+  if (!Number.isFinite(a)) throw new Error(tr('Укажите номер или диапазон: 3-5'));
   const to = Number.isFinite(b) ? b : a;
   updateChat(c.id, (cc) => {
     cc.messages = cc.messages.map((m, i) => (i >= a && i <= to ? { ...m, hidden } : m));
@@ -187,7 +189,7 @@ export async function runSlash(input: string): Promise<boolean> {
       }
       const cmd = COMMANDS.find((c) => c.names.includes(name));
       if (!cmd) {
-        toast(`Неизвестная команда /${name}. Список: /help`, 'error');
+        toast(tr('Неизвестная команда /{0}. Список: /help', name), 'error');
         return true;
       }
       const res = await cmd.run(arg);

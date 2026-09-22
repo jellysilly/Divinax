@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Copy, Download, Link2, MoreHorizontal, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
 import { activeChat, getState, setState, toast, updateChat, upsertLorebook, useStore } from '../store';
@@ -21,7 +22,7 @@ export function LorebookPage() {
   const [open, setOpen] = useState<number | null>(null);
 
   const createBook = () => {
-    const name = prompt('Название лорбука', 'Новый мир');
+    const name = prompt(tr('Название лорбука'), tr('Новый мир'));
     if (!name) return;
     const now = Date.now();
     const lb: Lorebook = { id: uid(), name, entries: [], createdAt: now, updatedAt: now };
@@ -32,7 +33,7 @@ export function LorebookPage() {
   const addEntry = () => {
     if (!book) return createBook();
     const uidNext = book.entries.reduce((m, e) => Math.max(m, e.uid), -1) + 1;
-    const e = { ...blankEntry(uidNext), comment: 'Новая запись' };
+    const e = { ...blankEntry(uidNext), comment: tr('Новая запись') };
     upsertLorebook({ ...book, entries: [e, ...book.entries] });
     setOpen(e.uid);
   };
@@ -43,15 +44,15 @@ export function LorebookPage() {
         <Select
           style={{ width: 260 }}
           value={book?.id ?? ''}
-          placeholder="Нет лорбуков"
+          placeholder={tr('Нет лорбуков')}
           onChange={(v) => setState({ editingLorebookId: v })}
           options={list.map((b) => ({ value: b.id, label: b.name }))}
         />
-        <IconBtn size="lg" icon={<Plus size={16} />} label="Создать лорбук" onClick={createBook} />
+        <IconBtn size="lg" icon={<Plus size={16} />} label={tr('Создать лорбук')} onClick={createBook} />
         <IconBtn
           size="lg"
           icon={<Upload size={16} />}
-          label="Импорт лорбука (JSON SillyTavern)"
+          label={tr('Импорт лорбука (JSON SillyTavern)')}
           onClick={async () => {
             const files = await pickFiles('.json', true);
             for (const f of files) {
@@ -63,25 +64,25 @@ export function LorebookPage() {
             }
           }}
         />
-        <IconBtn size="lg" icon={<Download size={16} />} label="Экспорт лорбука" disabled={!book} onClick={() => book && download(`${safeName(book.name)}.json`, JSON.stringify(lorebookToST(book), null, 2))} />
+        <IconBtn size="lg" icon={<Download size={16} />} label={tr('Экспорт лорбука')} disabled={!book} onClick={() => book && download(`${safeName(book.name)}.json`, JSON.stringify(lorebookToST(book), null, 2))} />
         <IconBtn
           size="lg"
           icon={<Pencil size={16} />}
-          label="Переименовать"
+          label={tr('Переименовать')}
           disabled={!book}
           onClick={() => {
-            const n = book && prompt('Новое название', book.name);
+            const n = book && prompt(tr('Новое название'), book.name);
             if (book && n) upsertLorebook({ ...book, name: n });
           }}
         />
         <IconBtn
           size="lg"
           icon={<Copy size={16} />}
-          label="Дублировать"
+          label={tr('Дублировать')}
           disabled={!book}
           onClick={() => {
             if (!book) return;
-            const c = { ...structuredClone(book), id: uid(), name: book.name + ' (копия)' };
+            const c = { ...structuredClone(book), id: uid(), name: book.name + tr(' (копия)') };
             upsertLorebook(c);
             setState({ editingLorebookId: c.id });
           }}
@@ -90,10 +91,10 @@ export function LorebookPage() {
           size="lg"
           className="danger"
           icon={<Trash2 size={16} />}
-          label="Удалить лорбук"
+          label={tr('Удалить лорбук')}
           disabled={!book}
           onClick={() => {
-            if (!book || !confirm(`Удалить лорбук «${book.name}»?`)) return;
+            if (!book || !confirm(tr('Удалить лорбук «{0}»?', book.name))) return;
             setState((s) => {
               const lorebooks = { ...s.lorebooks };
               delete lorebooks[book.id];
@@ -102,27 +103,27 @@ export function LorebookPage() {
           }}
         />
         <div className="grow" style={{ minWidth: 200 }}>
-          <SearchInput value={q} onChange={setQ} placeholder="Поиск по записям и ключам" />
+          <SearchInput value={q} onChange={setQ} placeholder={tr('Поиск по записям и ключам')} />
         </div>
         <Select
           style={{ width: 170 }}
           value={sort}
           onChange={(v: Sort) => setSort(v)}
           options={[
-            { value: 'order', label: 'По порядку' },
-            { value: 'title', label: 'По названию' },
-            { value: 'tokens', label: 'По размеру' },
-            { value: 'uid', label: 'По созданию' },
+            { value: 'order', label: tr('По порядку') },
+            { value: 'title', label: tr('По названию') },
+            { value: 'tokens', label: tr('По размеру') },
+            { value: 'uid', label: tr('По созданию') },
           ]}
         />
         <button type="button" className="btn primary" onClick={addEntry}>
-          <Plus size={16} /> Новая запись
+          <Plus size={16} /> {tr('Новая запись')}
         </button>
       </div>
       <div className="cols wrap-sm">
         <GlobalSettings book={book} />
-        <Panel className="fill" style={{ flex: '1 1 0' }} title={book ? `Записи · ${book.entries.length}` : 'Записи'} actions={<Legend />}>
-          {book ? <Entries book={book} q={q} sort={sort} open={open} setOpen={setOpen} /> : <div className="empty">Создайте или импортируйте лорбук.</div>}
+        <Panel className="fill" style={{ flex: '1 1 0' }} title={book ? tr('Записи · {0}', book.entries.length) : tr('Записи')} actions={<Legend />}>
+          {book ? <Entries book={book} q={q} sort={sort} open={open} setOpen={setOpen} /> : <div className="empty">{tr('Создайте или импортируйте лорбук.')}</div>}
         </Panel>
       </div>
     </div>
@@ -133,13 +134,13 @@ function Legend() {
   return (
     <div className="row sub d-only" style={{ gap: 14, fontSize: 12 }}>
       <span className="row" style={{ gap: 6 }}>
-        <span className="strategy-dot constant" /> постоянная
+        <span className="strategy-dot constant" /> {tr('постоянная')}
       </span>
       <span className="row" style={{ gap: 6 }}>
-        <span className="strategy-dot" /> по ключам
+        <span className="strategy-dot" /> {tr('по ключам')}
       </span>
       <span className="row" style={{ gap: 6 }}>
-        <Link2 size={12} /> векторная
+        <Link2 size={12} /> {tr('векторная')}
       </span>
     </div>
   );
@@ -151,28 +152,28 @@ function GlobalSettings({ book }: { book?: Lorebook }) {
   const chat = useStore(activeChat);
   const [adding, setAdding] = useState(false);
   return (
-    <Panel style={{ width: 340, flex: 'none' }} title="Глобальные настройки">
+    <Panel style={{ width: 340, flex: 'none' }} title={tr('Глобальные настройки')}>
       <div className="body scroll grow" style={{ paddingRight: 4 }}>
-        <Slider label="Глубина сканирования, сообщений" value={wi.scanDepth} min={0} max={50} onChange={(v) => setWI({ scanDepth: Math.round(v) })} hint="Сколько последних сообщений проверяется на ключи" />
-        <Slider label="Бюджет контекста" value={wi.budget} min={1} max={100} suffix="%" onChange={(v) => setWI({ budget: Math.round(v) })} hint="Доля контекста, которую может занять лорбук" />
-        <Slider label="Макс. глубина рекурсии" value={wi.maxRecursion} min={0} max={10} onChange={(v) => setWI({ maxRecursion: Math.round(v) })} hint="0 — без ограничений" />
+        <Slider label={tr('Глубина сканирования, сообщений')} value={wi.scanDepth} min={0} max={50} onChange={(v) => setWI({ scanDepth: Math.round(v) })} hint={tr('Сколько последних сообщений проверяется на ключи')} />
+        <Slider label={tr('Бюджет контекста')} value={wi.budget} min={1} max={100} suffix="%" onChange={(v) => setWI({ budget: Math.round(v) })} hint={tr('Доля контекста, которую может занять лорбук')} />
+        <Slider label={tr('Макс. глубина рекурсии')} value={wi.maxRecursion} min={0} max={10} onChange={(v) => setWI({ maxRecursion: Math.round(v) })} hint={tr('0 — без ограничений')} />
         <Divider />
         <div className="col" style={{ gap: 10 }}>
-          <Switch label="Рекурсивное сканирование" checked={wi.recursive} onChange={(v) => setWI({ recursive: v })} />
-          <Switch label="Учитывать регистр" checked={wi.caseSensitive} onChange={(v) => setWI({ caseSensitive: v })} />
-          <Switch label="Только целые слова" checked={wi.matchWholeWords} onChange={(v) => setWI({ matchWholeWords: v })} />
-          <Switch label="Сканировать имена участников" checked={wi.includeNames} onChange={(v) => setWI({ includeNames: v })} />
+          <Switch label={tr('Рекурсивное сканирование')} checked={wi.recursive} onChange={(v) => setWI({ recursive: v })} />
+          <Switch label={tr('Учитывать регистр')} checked={wi.caseSensitive} onChange={(v) => setWI({ caseSensitive: v })} />
+          <Switch label={tr('Только целые слова')} checked={wi.matchWholeWords} onChange={(v) => setWI({ matchWholeWords: v })} />
+          <Switch label={tr('Сканировать имена участников')} checked={wi.includeNames} onChange={(v) => setWI({ includeNames: v })} />
         </div>
         <Divider />
         <span className="label" style={{ marginBottom: 0 }}>
-          Активны во всех чатах
+          {tr('Активны во всех чатах')}
         </span>
         <div className="row wrap" style={{ gap: 6 }}>
           {wi.global.map((id) =>
             books[id] ? (
               <span key={id} className="chip">
                 {books[id].name}
-                <button type="button" className="x" aria-label="Убрать" onClick={() => setWI({ global: wi.global.filter((x) => x !== id) })}>
+                <button type="button" className="x" aria-label={tr('Убрать')} onClick={() => setWI({ global: wi.global.filter((x) => x !== id) })}>
                   <X size={12} />
                 </button>
               </span>
@@ -182,7 +183,7 @@ function GlobalSettings({ book }: { book?: Lorebook }) {
             <Select
               small
               value=""
-              placeholder="Выберите…"
+              placeholder={tr('Выберите…')}
               onChange={(v) => {
                 if (v) setWI({ global: [...wi.global, v] });
                 setAdding(false);
@@ -193,7 +194,7 @@ function GlobalSettings({ book }: { book?: Lorebook }) {
             />
           ) : (
             <button type="button" className="chip dashed" onClick={() => setAdding(true)}>
-              <Plus size={13} /> Добавить
+              <Plus size={13} /> {tr('Добавить')}
             </button>
           )}
         </div>
@@ -201,7 +202,7 @@ function GlobalSettings({ book }: { book?: Lorebook }) {
           <>
             <Divider />
             <Switch
-              label="Привязать к текущему чату"
+              label={tr('Привязать к текущему чату')}
               hint={`«${chat.name}»`}
               checked={chat.lorebookIds.includes(book.id)}
               onChange={(v) =>
@@ -221,7 +222,7 @@ function CharBind({ charId, bookId }: { charId: string; bookId: string }) {
   if (!ch) return null;
   return (
     <Switch
-      label={`Лорбук персонажа «${ch.name}»`}
+      label={tr('Лорбук персонажа «{0}»', ch.name)}
       checked={ch.lorebookId === bookId}
       onChange={(v) => setState((s) => ({ characters: { ...s.characters, [charId]: { ...ch, lorebookId: v ? bookId : undefined } } }))}
     />
@@ -249,14 +250,14 @@ function Entries({ book, q, sort, open, setOpen }: { book: Lorebook; q: string; 
     upsertLorebook({ ...b, entries: b.entries.map((e) => (e.uid === uidv ? { ...e, ...p } : e)) });
   };
   const remove = (uidv: number) => {
-    if (!confirm('Удалить запись?')) return;
+    if (!confirm(tr('Удалить запись?'))) return;
     const b = getState().lorebooks[book.id];
     upsertLorebook({ ...b, entries: b.entries.filter((e) => e.uid !== uidv) });
   };
   const duplicate = (e: LoreEntry) => {
     const b = getState().lorebooks[book.id];
     const next = b.entries.reduce((m, x) => Math.max(m, x.uid), -1) + 1;
-    upsertLorebook({ ...b, entries: [...b.entries, { ...structuredClone(e), uid: next, comment: e.comment + ' (копия)' }] });
+    upsertLorebook({ ...b, entries: [...b.entries, { ...structuredClone(e), uid: next, comment: e.comment + tr(' (копия)') }] });
   };
 
   // раскрытая запись показывается первой
@@ -274,20 +275,20 @@ function Entries({ book, q, sort, open, setOpen }: { book: Lorebook; q: string; 
             </span>
             <ChevronRight size={15} className="muted" />
             {e.strategy === 'vector' ? <Link2 size={13} className="muted" /> : <span className={`strategy-dot ${e.strategy === 'constant' ? 'constant' : ''}`} />}
-            <span className="t">{e.comment || e.key.join(', ') || `Запись ${e.uid}`}</span>
-            <span className="k">{e.strategy === 'constant' ? 'постоянная' : e.strategy === 'vector' ? 'векторный поиск' : e.key.join(', ') || '—'}</span>
-            <span className="p">{POSITION_SHORT[e.position]}</span>
+            <span className="t">{e.comment || e.key.join(', ') || tr('Запись {0}', e.uid)}</span>
+            <span className="k">{e.strategy === 'constant' ? tr('постоянная') : e.strategy === 'vector' ? tr('векторный поиск') : e.key.join(', ') || '—'}</span>
+            <span className="p">{tr(POSITION_SHORT[e.position])}</span>
             <span className="p d tabular" style={{ textAlign: 'center' }}>
               {e.position === WIPosition.atDepth ? e.depth : '—'}
             </span>
             <span className="p o tabular" style={{ textAlign: 'right' }}>
               {e.order}
             </span>
-            <IconBtn size="sm" bare icon={<MoreHorizontal size={15} />} label="Открыть" onClick={() => setOpen(e.uid)} />
+            <IconBtn size="sm" bare icon={<MoreHorizontal size={15} />} label={tr('Открыть')} onClick={() => setOpen(e.uid)} />
           </div>
         </div>
       ))}
-      {!list.length && <div className="empty">{book.entries.length ? 'Ничего не найдено' : 'Записей пока нет — нажмите «Новая запись».'}</div>}
+      {!list.length && <div className="empty">{book.entries.length ? tr('Ничего не найдено') : tr('Записей пока нет — нажмите «Новая запись».')}</div>}
     </div>
   );
 }
@@ -312,116 +313,116 @@ function EntryEditor({
         <div className="row" style={{ alignItems: 'flex-end', gap: 12 }}>
           <div className="row" style={{ paddingBottom: 8 }}>
             <Switch checked={!e.disable} onChange={(v) => onChange({ disable: !v })} />
-            <IconBtn size="sm" bare icon={<ChevronDown size={16} />} label="Свернуть" onClick={onClose} />
+            <IconBtn size="sm" bare icon={<ChevronDown size={16} />} label={tr('Свернуть')} onClick={onClose} />
           </div>
           <div className="entry-grid grow">
-            <Field label="Название">
+            <Field label={tr('Название')}>
               <LazyInput className="input" style={{ fontFamily: 'var(--serif)', fontSize: 17, fontWeight: 600 }} value={e.comment} onCommit={(v) => onChange({ comment: v })} />
             </Field>
-            <Field label="Тип">
+            <Field label={tr('Тип')}>
               <Select
                 value={e.strategy}
                 onChange={(v) => onChange({ strategy: v })}
                 options={[
-                  { value: 'normal', label: 'По ключам' },
-                  { value: 'constant', label: 'Постоянная' },
-                  { value: 'vector', label: 'Векторная' },
+                  { value: 'normal', label: tr('По ключам') },
+                  { value: 'constant', label: tr('Постоянная') },
+                  { value: 'vector', label: tr('Векторная') },
                 ]}
               />
             </Field>
-            <Field label="Позиция">
+            <Field label={tr('Позиция')}>
               <Select
                 value={e.position}
                 onChange={(v) => onChange({ position: Number(v) as WIPosition })}
-                options={(Object.keys(POSITION_LABELS) as unknown as WIPosition[]).map((k) => ({ value: Number(k) as WIPosition, label: POSITION_LABELS[k] }))}
+                options={(Object.keys(POSITION_LABELS) as unknown as WIPosition[]).map((k) => ({ value: Number(k) as WIPosition, label: tr(POSITION_LABELS[k]) }))}
               />
             </Field>
-            <Field label="Глуб.">
+            <Field label={tr('Глуб.')}>
               <NumInput value={e.depth} min={0} max={999} onChange={(v) => onChange({ depth: v })} />
             </Field>
-            <Field label="Порядок">
+            <Field label={tr('Порядок')}>
               <NumInput value={e.order} onChange={(v) => onChange({ order: v })} />
             </Field>
-            <Field label="Шанс">
+            <Field label={tr('Шанс')}>
               <NumInput value={e.probability} min={0} max={100} onChange={(v) => onChange({ probability: v, useProbability: true })} />
             </Field>
           </div>
         </div>
         <div className="grid3" style={{ gridTemplateColumns: '1.6fr 0.9fr 1.6fr' }}>
-          <Field label="Основные ключи" hint="Слово, фраза или /регулярка/">
-            <TagInput values={e.key} onChange={(v) => onChange({ key: v })} placeholder="ключ или /regex/" />
+          <Field label={tr('Основные ключи')} hint={tr('Слово, фраза или /регулярка/')}>
+            <TagInput values={e.key} onChange={(v) => onChange({ key: v })} placeholder={tr('ключ или /regex/')} />
           </Field>
-          <Field label="Логика">
-            <Select value={e.selectiveLogic} onChange={(v) => onChange({ selectiveLogic: Number(v) as WILogic })} options={[0, 3, 2, 1].map((k) => ({ value: k as WILogic, label: LOGIC_LABELS[k as WILogic] }))} />
+          <Field label={tr('Логика')}>
+            <Select value={e.selectiveLogic} onChange={(v) => onChange({ selectiveLogic: Number(v) as WILogic })} options={[0, 3, 2, 1].map((k) => ({ value: k as WILogic, label: tr(LOGIC_LABELS[k as WILogic]) }))} />
           </Field>
-          <Field label="Вторичные ключи">
-            <TagInput values={e.keysecondary} onChange={(v) => onChange({ keysecondary: v })} placeholder="необязательно" />
+          <Field label={tr('Вторичные ключи')}>
+            <TagInput values={e.keysecondary} onChange={(v) => onChange({ keysecondary: v })} placeholder={tr('необязательно')} />
           </Field>
         </div>
-        <Field label="Содержимое">
+        <Field label={tr('Содержимое')}>
           <LazyTextarea className="textarea serif" rows={5} value={e.content} onCommit={(v) => onChange({ content: v })} />
         </Field>
         <div className="row wrap" style={{ gap: 18 }}>
-          <Switch label="Не рекурсивная" checked={e.excludeRecursion} onChange={(v) => onChange({ excludeRecursion: v })} />
-          <Switch label="Предотвращать рекурсию" checked={e.preventRecursion} onChange={(v) => onChange({ preventRecursion: v })} />
-          <Switch label="Отложить до рекурсии" checked={e.delayUntilRecursion} onChange={(v) => onChange({ delayUntilRecursion: v })} />
+          <Switch label={tr('Не рекурсивная')} checked={e.excludeRecursion} onChange={(v) => onChange({ excludeRecursion: v })} />
+          <Switch label={tr('Предотвращать рекурсию')} checked={e.preventRecursion} onChange={(v) => onChange({ preventRecursion: v })} />
+          <Switch label={tr('Отложить до рекурсии')} checked={e.delayUntilRecursion} onChange={(v) => onChange({ delayUntilRecursion: v })} />
           <span className="spacer" />
-          <span className="sub">{estimateTokens(e.content)} токенов</span>
+          <span className="sub">{estimateTokens(e.content)} {tr('токенов')}</span>
           <button type="button" className="btn sm" onClick={() => setMore(!more)}>
-            {more ? 'Скрыть' : 'Дополнительно'}
+            {more ? tr('Скрыть') : tr('Дополнительно')}
           </button>
-          <IconBtn size="sm" icon={<Copy size={14} />} label="Дублировать" onClick={onDuplicate} />
-          <IconBtn size="sm" className="danger" icon={<Trash2 size={14} />} label="Удалить" onClick={onDelete} />
+          <IconBtn size="sm" icon={<Copy size={14} />} label={tr('Дублировать')} onClick={onDuplicate} />
+          <IconBtn size="sm" className="danger" icon={<Trash2 size={14} />} label={tr('Удалить')} onClick={onDelete} />
         </div>
         {more && (
           <div className="grid3">
             {e.position === WIPosition.atDepth && (
-              <Field label="Роль на глубине">
+              <Field label={tr('Роль на глубине')}>
                 <Select
                   value={e.role}
                   onChange={(v) => onChange({ role: v })}
                   options={[
-                    { value: 'system', label: 'Система' },
-                    { value: 'user', label: 'Пользователь' },
-                    { value: 'assistant', label: 'Ассистент' },
+                    { value: 'system', label: tr('Система') },
+                    { value: 'user', label: tr('Пользователь') },
+                    { value: 'assistant', label: tr('Ассистент') },
                   ]}
                 />
               </Field>
             )}
-            <Field label="Группа включения" hint="Из группы срабатывает одна запись">
+            <Field label={tr('Группа включения')} hint={tr('Из группы срабатывает одна запись')}>
               <LazyInput value={e.group} onCommit={(v) => onChange({ group: v })} />
             </Field>
-            <Field label="Своя глубина сканирования">
-              <LazyInput value={e.scanDepth == null ? '' : String(e.scanDepth)} placeholder="как в настройках" onCommit={(v) => onChange({ scanDepth: v.trim() === '' ? null : Math.max(0, parseInt(v, 10) || 0) })} />
+            <Field label={tr('Своя глубина сканирования')}>
+              <LazyInput value={e.scanDepth == null ? '' : String(e.scanDepth)} placeholder={tr('как в настройках')} onCommit={(v) => onChange({ scanDepth: v.trim() === '' ? null : Math.max(0, parseInt(v, 10) || 0) })} />
             </Field>
-            <Field label="Липкость (сообщ.)" hint="Остаётся активной N сообщений">
+            <Field label={tr('Липкость (сообщ.)')} hint={tr('Остаётся активной N сообщений')}>
               <NumInput value={e.sticky} min={0} onChange={(v) => onChange({ sticky: v })} />
             </Field>
-            <Field label="Перезарядка (сообщ.)">
+            <Field label={tr('Перезарядка (сообщ.)')}>
               <NumInput value={e.cooldown} min={0} onChange={(v) => onChange({ cooldown: v })} />
             </Field>
-            <Field label="Задержка (сообщ.)" hint="Не срабатывает, пока в чате меньше N сообщений">
+            <Field label={tr('Задержка (сообщ.)')} hint={tr('Не срабатывает, пока в чате меньше N сообщений')}>
               <NumInput value={e.delay} min={0} onChange={(v) => onChange({ delay: v })} />
             </Field>
-            <Field label="Регистр">
+            <Field label={tr('Регистр')}>
               <Select
                 value={e.caseSensitive == null ? 'g' : e.caseSensitive ? 'y' : 'n'}
                 onChange={(v) => onChange({ caseSensitive: v === 'g' ? null : v === 'y' })}
                 options={[
-                  { value: 'g', label: 'Как в настройках' },
-                  { value: 'y', label: 'Учитывать' },
-                  { value: 'n', label: 'Не учитывать' },
+                  { value: 'g', label: tr('Как в настройках') },
+                  { value: 'y', label: tr('Учитывать') },
+                  { value: 'n', label: tr('Не учитывать') },
                 ]}
               />
             </Field>
-            <Field label="Целые слова">
+            <Field label={tr('Целые слова')}>
               <Select
                 value={e.matchWholeWords == null ? 'g' : e.matchWholeWords ? 'y' : 'n'}
                 onChange={(v) => onChange({ matchWholeWords: v === 'g' ? null : v === 'y' })}
                 options={[
-                  { value: 'g', label: 'Как в настройках' },
-                  { value: 'y', label: 'Да' },
-                  { value: 'n', label: 'Нет' },
+                  { value: 'g', label: tr('Как в настройках') },
+                  { value: 'y', label: tr('Да') },
+                  { value: 'n', label: tr('Нет') },
                 ]}
               />
             </Field>

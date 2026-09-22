@@ -1,9 +1,11 @@
+import { enPlural, getLang, locale, tr } from './i18n';
 export const uid = (): string =>
   (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36)).replace(/-/g, '').slice(0, 16);
 
 export const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
 export function plural(n: number, one: string, few: string, many: string): string {
+  if (getLang() === 'en') return enPlural(n, many) ?? many;
   const m10 = n % 10;
   const m100 = n % 100;
   if (m10 === 1 && m100 !== 11) return one;
@@ -12,16 +14,16 @@ export function plural(n: number, one: string, few: string, many: string): strin
 }
 
 export const fmtTime = (ts: number) =>
-  new Date(ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  new Date(ts).toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' });
 
 export function fmtDay(ts: number): string {
   const d = new Date(ts);
   const now = new Date();
   const start = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const diff = Math.round((start(now) - start(d)) / 86400000);
-  if (diff === 0) return 'сегодня';
-  if (diff === 1) return 'вчера';
-  return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric' });
+  if (diff === 0) return tr('сегодня');
+  if (diff === 1) return tr('вчера');
+  return d.toLocaleDateString(locale(), { day: 'numeric', month: 'long', year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric' });
 }
 
 export const fmtDayTitle = (ts: number) => {
@@ -29,7 +31,7 @@ export const fmtDayTitle = (ts: number) => {
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 
-export const fmtNum = (n: number) => n.toLocaleString('ru-RU');
+export const fmtNum = (n: number) => n.toLocaleString(locale());
 
 /** Приблизительный подсчёт токенов без загрузки токенизатора. */
 export function estimateTokens(text: string, mode: 'auto' | 'chars' | 'words' = 'auto'): number {

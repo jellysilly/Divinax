@@ -1,6 +1,8 @@
+import { tr } from '../lib/i18n';
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 import { ChevronDown, Search, X } from 'lucide-react';
 import { initials } from '../lib/util';
+import type { Background } from '../types';
 
 export const STAR_PATH = 'M12 0C12.7 8.2 15.8 11.3 24 12C15.8 12.7 12.7 15.8 12 24C11.3 15.8 8.2 12.7 0 12C8.2 11.3 11.3 8.2 12 0Z';
 
@@ -304,7 +306,7 @@ export function TagInput({
       {values.map((v) => (
         <span className="chip" key={v}>
           {v}
-          <button type="button" className="x" aria-label={`Убрать ${v}`} onClick={() => onChange(values.filter((x) => x !== v))}>
+          <button type="button" className="x" aria-label={tr('Убрать {0}', v)} onClick={() => onChange(values.filter((x) => x !== v))}>
             <X size={12} />
           </button>
         </span>
@@ -359,7 +361,7 @@ export function Modal({
       <Panel
         className={`modal scroll ${wide ? 'wide' : ''}`}
         title={title}
-        actions={<IconBtn icon={<X size={16} />} label="Закрыть" onClick={onClose} />}
+        actions={<IconBtn icon={<X size={16} />} label={tr('Закрыть')} onClick={onClose} />}
       >
         {children}
         {footer && <div className="modal-foot">{footer}</div>}
@@ -483,6 +485,12 @@ export function NumInput({ value, onChange, min, max, step = 1, className = 'inp
       onKeyDown={(e) => e.key === 'Enter' && commit()}
     />
   );
+}
+
+/** Превью фона: картинка или цветная плашка (прозрачный — шахматка). */
+export function BgThumb({ bg }: { bg: Background }) {
+  if (bg.color) return <div className={`bg-swatch ${bg.color === 'transparent' ? 'checker' : ''}`} style={bg.color === 'transparent' ? undefined : { background: bg.color }} />;
+  return <img src={bg.url} alt="" loading="lazy" />;
 }
 
 export function useConfirm() {

@@ -370,6 +370,7 @@ export interface Background {
   id: string;
   name: string;
   url: string;
+  color?: string; // сплошной цвет ('transparent' — без фона)
   builtin?: boolean;
 }
 
@@ -382,6 +383,7 @@ export interface UiSettings {
   ornaments: number; // 0..100
   messageStyle: 'flat' | 'bubbles' | 'document';
   avatarStyle: 'round' | 'square' | 'portrait';
+  avatarPosition: 'top' | 'side' | 'none';
   showTimestamps: boolean;
   showNumbers: boolean;
   showTokens: boolean;

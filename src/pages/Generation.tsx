@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useState } from 'react';
 import { Download, GripVertical, Pencil, Plus, Save, Trash2, Upload } from 'lucide-react';
 import { activePreset, openModal, setState, toast, updatePreset, useStore } from '../store';
@@ -16,7 +17,7 @@ export function GenerationPage() {
   const isChat = useStore((s) => s.api.main === 'chat');
 
   const saveAs = () => {
-    const name = prompt('Название нового пресета', preset.name + ' (копия)');
+    const name = prompt(tr('Название нового пресета'), preset.name + tr(' (копия)'));
     if (!name) return;
     const p = { ...structuredClone(preset), id: uid(), name };
     setState((s) => ({ presets: [...s.presets, p], activePresetId: p.id }));
@@ -29,9 +30,9 @@ export function GenerationPage() {
       const j = JSON.parse(await f.text());
       const p = presetFromST(j, f.name.replace(/\.json$/i, ''));
       setState((s) => ({ presets: [...s.presets, p], activePresetId: p.id }));
-      toast(`Пресет «${p.name}» импортирован`, 'success');
+      toast(tr('Пресет «{0}» импортирован', p.name), 'success');
     } catch (e) {
-      toast('Не удалось импортировать: ' + (e as Error).message, 'error');
+      toast(tr('Не удалось импортировать: ') + (e as Error).message, 'error');
     }
   };
 
@@ -39,34 +40,34 @@ export function GenerationPage() {
 
   return (
     <div className="cols wrap-md">
-      <Panel className="fill" style={{ flex: '1 1 0', minWidth: 340 }} title="Параметры генерации">
+      <Panel className="fill" style={{ flex: '1 1 0', minWidth: 340 }} title={tr('Параметры генерации')}>
         <div className="row">
           <Select
             className="grow"
             value={preset.id}
             onChange={(v) => setState({ activePresetId: v })}
-            options={presets.map((p) => ({ value: p.id, label: p.name }))}
+            options={presets.map((p) => ({ value: p.id, label: tr(p.name) }))}
           />
-          <IconBtn size="lg" icon={<Save size={16} />} label="Сохранить как новый" onClick={saveAs} />
+          <IconBtn size="lg" icon={<Save size={16} />} label={tr('Сохранить как новый')} onClick={saveAs} />
           <IconBtn
             size="lg"
             icon={<Pencil size={16} />}
-            label="Переименовать"
+            label={tr('Переименовать')}
             onClick={() => {
-              const n = prompt('Новое название', preset.name);
+              const n = prompt(tr('Новое название'), preset.name);
               if (n) set({ name: n });
             }}
           />
-          <IconBtn size="lg" icon={<Upload size={16} />} label="Импорт пресета (JSON, в т.ч. SillyTavern)" onClick={() => void importPreset()} />
-          <IconBtn size="lg" icon={<Download size={16} />} label="Экспорт пресета" onClick={() => download(`${safeName(preset.name)}.json`, JSON.stringify(preset, null, 2))} />
+          <IconBtn size="lg" icon={<Upload size={16} />} label={tr('Импорт пресета (JSON, в т.ч. SillyTavern)')} onClick={() => void importPreset()} />
+          <IconBtn size="lg" icon={<Download size={16} />} label={tr('Экспорт пресета')} onClick={() => download(`${safeName(preset.name)}.json`, JSON.stringify(preset, null, 2))} />
           <IconBtn
             size="lg"
             className="danger"
             icon={<Trash2 size={16} />}
-            label="Удалить пресет"
+            label={tr('Удалить пресет')}
             disabled={presets.length < 2}
             onClick={() => {
-              if (!confirm(`Удалить пресет «${preset.name}»?`)) return;
+              if (!confirm(tr('Удалить пресет «{0}»?', preset.name))) return;
               setState((s) => {
                 const rest = s.presets.filter((p) => p.id !== preset.id);
                 return { presets: rest, activePresetId: rest[0].id };
@@ -76,33 +77,33 @@ export function GenerationPage() {
         </div>
         <div className="body scroll grow" style={{ paddingRight: 6 }}>
           <div className="grid2" style={{ gap: 10 }}>
-            <Switch label="Стриминг ответа" checked={preset.stream} onChange={(v) => set({ stream: v })} />
-            <Switch label="Рассуждения модели" checked={preset.reasoning} onChange={(v) => set({ reasoning: v })} />
-            <Switch label="Неограниченный контекст" checked={preset.unlockedContext} onChange={(v) => set({ unlockedContext: v })} />
-            {isChat && <Switch label="Склеивать системные" checked={preset.squashSystem} onChange={(v) => set({ squashSystem: v })} />}
+            <Switch label={tr('Стриминг ответа')} checked={preset.stream} onChange={(v) => set({ stream: v })} />
+            <Switch label={tr('Рассуждения модели')} checked={preset.reasoning} onChange={(v) => set({ reasoning: v })} />
+            <Switch label={tr('Неограниченный контекст')} checked={preset.unlockedContext} onChange={(v) => set({ unlockedContext: v })} />
+            {isChat && <Switch label={tr('Склеивать системные')} checked={preset.squashSystem} onChange={(v) => set({ squashSystem: v })} />}
           </div>
           <Divider />
           <div className="grid2">
             <Slider
-              label="Размер контекста, токенов"
+              label={tr('Размер контекста, токенов')}
               value={preset.maxContext}
               min={512}
               max={preset.unlockedContext ? 2_000_000 : Math.max(maxCtx ?? 131072, preset.maxContext)}
               step={256}
               onChange={(v) => set({ maxContext: Math.round(v) })}
-              hint="Сколько токенов истории и описаний отправлять модели"
+              hint={tr('Сколько токенов истории и описаний отправлять модели')}
             />
-            <Slider label="Длина ответа, токенов" value={preset.maxTokens} min={16} max={8192} step={8} onChange={(v) => set({ maxTokens: Math.round(v) })} hint="Максимальная длина ответа модели" />
-            <Slider label="Температура" value={preset.temperature} min={0} max={2} step={0.01} onChange={(v) => set({ temperature: v })} hint="Выше — смелее и разнообразнее, ниже — предсказуемее" />
-            <Slider label="Top P" value={preset.topP} min={0} max={1} step={0.01} onChange={(v) => set({ topP: v })} hint="Отсекает маловероятные токены по суммарной вероятности" />
-            <Slider label="Top K" value={preset.topK} min={0} max={200} step={1} onChange={(v) => set({ topK: Math.round(v) })} hint="Берёт только K самых вероятных токенов (0 — выключено)" />
-            <Slider label="Min P" value={preset.minP} min={0} max={1} step={0.01} onChange={(v) => set({ minP: v })} hint="Отсекает токены слабее доли от самого вероятного" />
-            <Slider label="Штраф за частоту" value={preset.freqPen} min={-2} max={2} step={0.01} onChange={(v) => set({ freqPen: v })} hint="Снижает повторы часто встречающихся слов" />
-            <Slider label="Штраф за присутствие" value={preset.presPen} min={-2} max={2} step={0.01} onChange={(v) => set({ presPen: v })} hint="Подталкивает к новым темам" />
-            <Slider label="Штраф за повтор" value={preset.repPen} min={1} max={2} step={0.01} onChange={(v) => set({ repPen: v })} hint="Repetition penalty (для локальных моделей и OpenRouter)" />
+            <Slider label={tr('Длина ответа, токенов')} value={preset.maxTokens} min={16} max={8192} step={8} onChange={(v) => set({ maxTokens: Math.round(v) })} hint={tr('Максимальная длина ответа модели')} />
+            <Slider label={tr('Температура')} value={preset.temperature} min={0} max={2} step={0.01} onChange={(v) => set({ temperature: v })} hint={tr('Выше — смелее и разнообразнее, ниже — предсказуемее')} />
+            <Slider label="Top P" value={preset.topP} min={0} max={1} step={0.01} onChange={(v) => set({ topP: v })} hint={tr('Отсекает маловероятные токены по суммарной вероятности')} />
+            <Slider label="Top K" value={preset.topK} min={0} max={200} step={1} onChange={(v) => set({ topK: Math.round(v) })} hint={tr('Берёт только K самых вероятных токенов (0 — выключено)')} />
+            <Slider label="Min P" value={preset.minP} min={0} max={1} step={0.01} onChange={(v) => set({ minP: v })} hint={tr('Отсекает токены слабее доли от самого вероятного')} />
+            <Slider label={tr('Штраф за частоту')} value={preset.freqPen} min={-2} max={2} step={0.01} onChange={(v) => set({ freqPen: v })} hint={tr('Снижает повторы часто встречающихся слов')} />
+            <Slider label={tr('Штраф за присутствие')} value={preset.presPen} min={-2} max={2} step={0.01} onChange={(v) => set({ presPen: v })} hint={tr('Подталкивает к новым темам')} />
+            <Slider label={tr('Штраф за повтор')} value={preset.repPen} min={1} max={2} step={0.01} onChange={(v) => set({ repPen: v })} hint={tr('Repetition penalty (для локальных моделей и OpenRouter)')} />
             {!isChat && (
               <>
-                <Slider label="Окно штрафа за повтор" value={preset.repPenRange} min={0} max={8192} step={64} onChange={(v) => set({ repPenRange: Math.round(v) })} />
+                <Slider label={tr('Окно штрафа за повтор')} value={preset.repPenRange} min={0} max={8192} step={64} onChange={(v) => set({ repPenRange: Math.round(v) })} />
                 <Slider label="Top A" value={preset.topA} min={0} max={1} step={0.01} onChange={(v) => set({ topA: v })} />
                 <Slider label="Typical P" value={preset.typicalP} min={0} max={1} step={0.01} onChange={(v) => set({ typicalP: v })} />
                 <Slider label="TFS" value={preset.tfs} min={0} max={1} step={0.01} onChange={(v) => set({ tfs: v })} />
@@ -110,16 +111,16 @@ export function GenerationPage() {
             )}
           </div>
           <div className="grid2">
-            <Field label="Усилие рассуждений">
+            <Field label={tr('Усилие рассуждений')}>
               <Select
                 value={preset.reasoningEffort}
                 onChange={(v) => set({ reasoningEffort: v })}
                 options={[
-                  { value: 'auto', label: 'Авто' },
-                  { value: 'minimal', label: 'Минимальное' },
-                  { value: 'low', label: 'Низкое' },
-                  { value: 'medium', label: 'Среднее' },
-                  { value: 'high', label: 'Высокое' },
+                  { value: 'auto', label: tr('Авто') },
+                  { value: 'minimal', label: tr('Минимальное') },
+                  { value: 'low', label: tr('Низкое') },
+                  { value: 'medium', label: tr('Среднее') },
+                  { value: 'high', label: tr('Высокое') },
                 ]}
               />
             </Field>
@@ -127,25 +128,25 @@ export function GenerationPage() {
               <NumInput value={preset.seed} onChange={(v) => set({ seed: Math.round(v) })} />
             </Field>
           </div>
-          <Divider title="Служебные промпты" />
-          <UtilityPrompt label="Ответ за пользователя" k="impersonationPrompt" />
-          <UtilityPrompt label="Продолжение ответа" k="continuePrompt" />
-          <UtilityPrompt label="Начало чата" k="newChatPrompt" />
-          <UtilityPrompt label="Начало группового чата" k="newGroupChatPrompt" />
-          <UtilityPrompt label="Разделитель примеров" k="newExampleChatPrompt" />
-          <UtilityPrompt label="Подсказка в группе" k="groupNudgePrompt" />
+          <Divider title={tr('Служебные промпты')} />
+          <UtilityPrompt label={tr('Ответ за пользователя')} k="impersonationPrompt" />
+          <UtilityPrompt label={tr('Продолжение ответа')} k="continuePrompt" />
+          <UtilityPrompt label={tr('Начало чата')} k="newChatPrompt" />
+          <UtilityPrompt label={tr('Начало группового чата')} k="newGroupChatPrompt" />
+          <UtilityPrompt label={tr('Разделитель примеров')} k="newExampleChatPrompt" />
+          <UtilityPrompt label={tr('Подсказка в группе')} k="groupNudgePrompt" />
           <button
             type="button"
             className="btn sm"
             style={{ alignSelf: 'flex-start' }}
             onClick={() => {
-              if (confirm('Вернуть значения по умолчанию для параметров этого пресета? Промпты не изменятся.')) {
+              if (confirm(tr('Вернуть значения по умолчанию для параметров этого пресета? Промпты не изменятся.'))) {
                 const { id, name, prompts } = preset;
                 updatePreset(() => ({ ...DEFAULT_PRESET, id, name, prompts }));
               }
             }}
           >
-            Сбросить параметры
+            {tr('Сбросить параметры')}
           </button>
         </div>
       </Panel>
@@ -192,13 +193,13 @@ function PromptManager() {
   const tokensFor = (p: PromptItem) => {
     if (!p.marker) return p.content ? fmtNum(estimateTokens(p.content)) : '—';
     const item = lastItems.find((x) => x.name === p.name);
-    return item ? fmtNum(item.tokens) : 'авто';
+    return item ? fmtNum(item.tokens) : tr('авто');
   };
 
   const addPrompt = () => {
     const p: PromptItem = {
       id: uid(),
-      name: 'Новый промпт',
+      name: tr('Новый промпт'),
       role: 'system',
       content: '',
       marker: false,
@@ -215,44 +216,44 @@ function PromptManager() {
     <Panel
       className="fill"
       style={{ flex: '1.25 1 0', minWidth: 360 }}
-      title="Менеджер промптов"
+      title={tr('Менеджер промптов')}
       actions={
         <>
           <button type="button" className="btn sm" onClick={addPrompt}>
-            <Plus size={15} /> Промпт
+            <Plus size={15} /> {tr('Промпт')}
           </button>
           <IconBtn
             icon={<Upload size={16} />}
-            label="Импорт порядка промптов"
+            label={tr('Импорт порядка промптов')}
             onClick={async () => {
               const [f] = await pickFiles('.json');
               if (!f) return;
               try {
                 const j = JSON.parse(await f.text());
                 const prompts = promptsFromST(j) ?? j.prompts;
-                if (!Array.isArray(prompts)) throw new Error('нет списка промптов');
+                if (!Array.isArray(prompts)) throw new Error(tr('нет списка промптов'));
                 updatePreset((x) => ({ ...x, prompts }));
-                toast('Промпты импортированы', 'success');
+                toast(tr('Промпты импортированы'), 'success');
               } catch (e) {
-                toast('Ошибка импорта: ' + (e as Error).message, 'error');
+                toast(tr('Ошибка импорта: ') + (e as Error).message, 'error');
               }
             }}
           />
-          <IconBtn icon={<Download size={16} />} label="Экспорт промптов" onClick={() => download('prompts.json', JSON.stringify({ prompts: preset.prompts }, null, 2))} />
+          <IconBtn icon={<Download size={16} />} label={tr('Экспорт промптов')} onClick={() => download('prompts.json', JSON.stringify({ prompts: preset.prompts }, null, 2))} />
         </>
       }
     >
       <div className="sub">
         {isChat
-          ? 'Блоки отправляются модели сверху вниз. Перетаскивайте, чтобы менять порядок; маркеры заполняются автоматически.'
-          : 'Сейчас выбран Text Completion — порядок задаёт шаблон контекста во вкладке «Формат». Здесь используются только тексты основного промпта и инструкций.'}
+          ? tr('Блоки отправляются модели сверху вниз. Перетаскивайте, чтобы менять порядок; маркеры заполняются автоматически.')
+          : tr('Сейчас выбран Text Completion — порядок задаёт шаблон контекста во вкладке «Формат». Здесь используются только тексты основного промпта и инструкций.')}
       </div>
       <div className="pm-table grow">
         <div className="pm-row head">
           <span />
-          <span>Блок</span>
-          <span className="kind-h d-only">Тип</span>
-          <span style={{ textAlign: 'right' }}>Токены</span>
+          <span>{tr('Блок')}</span>
+          <span className="kind-h d-only">{tr('Тип')}</span>
+          <span style={{ textAlign: 'right' }}>{tr('Токены')}</span>
           <span />
           <span />
         </div>
@@ -281,17 +282,17 @@ function PromptManager() {
                 setOver(null);
               }}
             >
-              <span className="grip" title="Перетащите">
+              <span className="grip" title={tr('Перетащите')}>
                 <GripVertical size={16} />
               </span>
-              <span className="name" title={p.name}>
-                {p.name}
-                {p.position === 'absolute' && !p.marker && <span className="muted"> · глубина {p.depth}</span>}
+              <span className="name" title={tr(p.name)}>
+                {tr(p.name)}
+                {p.position === 'absolute' && !p.marker && <span className="muted"> {tr('· глубина')} {p.depth}</span>}
               </span>
-              <span className="kind">{p.marker ? 'маркер' : p.role === 'system' ? 'система' : p.role === 'user' ? 'пользователь' : 'ассистент'}</span>
+              <span className="kind">{p.marker ? tr('маркер') : p.role === 'system' ? tr('система') : p.role === 'user' ? tr('пользователь') : tr('ассистент')}</span>
               <span className="toks">{tokensFor(p)}</span>
               <span className="edit-cell">
-                {!p.marker && <IconBtn size="sm" bare icon={<Pencil size={14} />} label="Изменить" onClick={() => openModal('promptEdit', p.id)} />}
+                {!p.marker && <IconBtn size="sm" bare icon={<Pencil size={14} />} label={tr('Изменить')} onClick={() => openModal('promptEdit', p.id)} />}
               </span>
               <Switch checked={p.enabled} onChange={(v) => toggle(p.id, v)} />
             </div>
@@ -299,9 +300,9 @@ function PromptManager() {
         </div>
       </div>
       <div className="row" style={{ justifyContent: 'space-between', borderTop: '1px solid var(--line)', paddingTop: 14 }}>
-        <span className="sub">В последнем запросе</span>
-        <button type="button" className="big-tokens" onClick={() => openModal('prompt')} title="Показать состав промпта">
-          {fmtNum(lastTokens)} токенов
+        <span className="sub">{tr('В последнем запросе')}</span>
+        <button type="button" className="big-tokens" onClick={() => openModal('prompt')} title={tr('Показать состав промпта')}>
+          {fmtNum(lastTokens)} {tr('токенов')}
         </button>
       </div>
     </Panel>
@@ -397,37 +398,37 @@ export function PromptEditor({ id, onClose }: { id: string; onClose: () => void 
   return (
     <div className="col" style={{ gap: 14 }}>
       <div className="grid2">
-        <Field label="Название">
+        <Field label={tr('Название')}>
           <input className="input" value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} />
         </Field>
-        <Field label="Роль">
+        <Field label={tr('Роль')}>
           <Select
             value={d.role}
             onChange={(v) => setD({ ...d, role: v })}
             options={[
-              { value: 'system', label: 'Система' },
-              { value: 'user', label: 'Пользователь' },
-              { value: 'assistant', label: 'Ассистент' },
+              { value: 'system', label: tr('Система') },
+              { value: 'user', label: tr('Пользователь') },
+              { value: 'assistant', label: tr('Ассистент') },
             ]}
           />
         </Field>
-        <Field label="Позиция">
+        <Field label={tr('Позиция')}>
           <Select
             value={d.position}
             onChange={(v) => setD({ ...d, position: v })}
             options={[
-              { value: 'relative', label: 'По порядку в списке' },
-              { value: 'absolute', label: 'На глубине в истории' },
+              { value: 'relative', label: tr('По порядку в списке') },
+              { value: 'absolute', label: tr('На глубине в истории') },
             ]}
           />
         </Field>
         {d.position === 'absolute' && (
-          <Field label="Глубина">
+          <Field label={tr('Глубина')}>
             <NumInput value={d.depth} min={0} max={999} onChange={(v) => setD({ ...d, depth: v })} />
           </Field>
         )}
       </div>
-      <Field label="Текст промпта" hint="Поддерживаются макросы {{char}}, {{user}}, {{random::…}} и др.">
+      <Field label={tr('Текст промпта')} hint={tr('Поддерживаются макросы {{char}}, {{user}}, {{random::…}} и др.')}>
         <textarea className="textarea scroll" rows={12} value={d.content} onChange={(e) => setD({ ...d, content: e.target.value })} />
       </Field>
       <div className="modal-foot">
@@ -440,16 +441,16 @@ export function PromptEditor({ id, onClose }: { id: string; onClose: () => void 
               onClose();
             }}
           >
-            <Trash2 size={15} /> Удалить
+            <Trash2 size={15} /> {tr('Удалить')}
           </button>
         )}
         <span className="spacer" />
-        <span className="sub">{fmtNum(estimateTokens(d.content))} токенов</span>
+        <span className="sub">{fmtNum(estimateTokens(d.content))} {tr('токенов')}</span>
         <button type="button" className="btn" onClick={onClose}>
-          Отмена
+          {tr('Отмена')}
         </button>
         <button type="button" className="btn primary" onClick={save}>
-          Сохранить
+          {tr('Сохранить')}
         </button>
       </div>
     </div>

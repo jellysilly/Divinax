@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import type { ReactNode } from 'react';
 import {
   AlignLeft,
@@ -49,15 +50,15 @@ export function ExtensionsPage() {
     <div className="col scroll" style={{ flex: 1, minHeight: 0, gap: 16, paddingTop: 2 }}>
       <Panel star={false} style={{ flexDirection: 'row', alignItems: 'center', gap: 20, flexWrap: 'wrap', flex: 'none' }}>
         <div className="col grow" style={{ gap: 6, minWidth: 260 }}>
-          <h2 className="h2">Расширения</h2>
-          <span className="sub">Включайте модули и настраивайте их здесь. Сторонние расширения ставятся по ссылке на репозиторий.</span>
+          <h2 className="h2">{tr('Расширения')}</h2>
+          <span className="sub">{tr('Включайте модули и настраивайте их здесь. Сторонние расширения ставятся по ссылке на репозиторий.')}</span>
         </div>
-        <input className="input" style={{ maxWidth: 340 }} placeholder="https://github.com/автор/расширение" />
-        <button type="button" className="btn primary" onClick={() => openModal('info', 'Установка сторонних расширений появится в следующей версии Divinax — сейчас доступны встроенные модули.')}>
-          <Download size={15} /> Установить
+        <input className="input" style={{ maxWidth: 340 }} placeholder={tr('https://github.com/автор/расширение')} />
+        <button type="button" className="btn primary" onClick={() => openModal('info', tr('Установка сторонних расширений появится в следующей версии Divinax — сейчас доступны встроенные модули.'))}>
+          <Download size={15} /> {tr('Установить')}
         </button>
-        <button type="button" className="btn" onClick={() => openModal('info', 'Все встроенные расширения актуальны.')}>
-          <RefreshCw size={15} /> Обновить все
+        <button type="button" className="btn" onClick={() => openModal('info', tr('Все встроенные расширения актуальны.'))}>
+          <RefreshCw size={15} /> {tr('Обновить все')}
         </button>
       </Panel>
       <div className="cards-grid">
@@ -65,16 +66,16 @@ export function ExtensionsPage() {
           <div key={e.id} className="ext-card">
             <div className="row" style={{ gap: 12 }}>
               <span className="ico">{e.icon}</span>
-              <span className="h3 grow">{e.name}</span>
+              <span className="h3 grow">{tr(e.name)}</span>
               <Switch checked={Boolean(enabled[e.id])} onChange={(v) => toggle(e.id, v)} />
             </div>
-            <p>{e.desc}</p>
+            <p>{tr(e.desc)}</p>
             <div className="row" style={{ justifyContent: 'space-between' }}>
               <span className="sub" style={{ fontSize: 12 }}>
-                {e.ready ? (enabled[e.id] ? 'включено' : 'выключено') : 'в разработке'}
+                {e.ready ? (enabled[e.id] ? tr('включено') : tr('выключено')) : tr('в разработке')}
               </span>
               <button type="button" className="btn sm" onClick={() => openModal('ext', e.id)}>
-                <Settings size={15} /> Настроить
+                <Settings size={15} /> {tr('Настроить')}
               </button>
             </div>
           </div>

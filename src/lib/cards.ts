@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 // Импорт/экспорт карточек персонажей: PNG (tEXt chara / ccv3) и JSON (spec v1/v2/v3).
 import type { Character, Lorebook } from '../types';
 import { entriesFromST, lorebookToCharacterBook } from './worldinfo';
@@ -37,7 +38,7 @@ function b64encodeUtf8(s: string): string {
 export function readPngTextChunks(buf: ArrayBuffer): Record<string, string> {
   const v = new DataView(buf);
   const out: Record<string, string> = {};
-  if (v.getUint32(0) !== 0x89504e47) throw new Error('Это не PNG-файл');
+  if (v.getUint32(0) !== 0x89504e47) throw new Error(tr('Это не PNG-файл'));
   let p = 8;
   const dec = new TextDecoder('latin1');
   while (p < buf.byteLength) {
@@ -99,7 +100,7 @@ export function writePngTextChunks(buf: ArrayBuffer, chunks: Record<string, stri
   return out;
 }
 
-export function blankCharacter(name = 'Новый персонаж'): Character {
+export function blankCharacter(name = tr('Новый персонаж')): Character {
   const now = Date.now();
   return {
     id: uid(),
@@ -128,7 +129,7 @@ export function blankCharacter(name = 'Новый персонаж'): Character 
 
 export function characterFromJson(json: Raw): { char: Character; book?: Lorebook } {
   const d: Raw = json.data && (json.spec === 'chara_card_v2' || json.spec === 'chara_card_v3' || json.data.name) ? json.data : json;
-  const c = blankCharacter(String(d.name ?? d.char_name ?? 'Без имени'));
+  const c = blankCharacter(String(d.name ?? d.char_name ?? tr('Без имени')));
   c.description = String(d.description ?? d.char_persona ?? '');
   c.personality = String(d.personality ?? '');
   c.scenario = String(d.scenario ?? d.world_scenario ?? '');
@@ -158,7 +159,7 @@ export function characterFromJson(json: Raw): { char: Character; book?: Lorebook
     const now = Date.now();
     book = {
       id: uid(),
-      name: String(d.character_book.name || `${c.name} — лорбук`),
+      name: String(d.character_book.name || tr('{0} — лорбук', c.name)),
       description: String(d.character_book.description ?? ''),
       entries: entriesFromST(d.character_book),
       createdAt: now,
@@ -177,7 +178,7 @@ export async function importCharacterFile(file: File): Promise<{ char: Character
   const buf = await file.arrayBuffer();
   const chunks = readPngTextChunks(buf);
   const raw = chunks.ccv3 ?? chunks.chara;
-  if (!raw) throw new Error('В PNG нет данных карточки (chara/ccv3)');
+  if (!raw) throw new Error(tr('В PNG нет данных карточки (chara/ccv3)'));
   const res = characterFromJson(JSON.parse(b64decodeUtf8(raw)));
   res.char.avatar = await readDataUrl(file);
   return res;

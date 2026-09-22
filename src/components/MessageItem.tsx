@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Brain,
@@ -59,7 +60,7 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
   const meta = [
     ui.showNumbers ? `#${index}` : '',
     ui.showTimestamps ? fmtTime(m.date) : '',
-    ui.showTokens && !streaming ? `${tokens} т.` : '',
+    ui.showTokens && !streaming ? tr('{0} т.', tokens) : '',
   ]
     .filter(Boolean)
     .join(' · ');
@@ -68,7 +69,7 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
     setState((s) => ({ selecting: s.selecting?.includes(m.id) ? s.selecting.filter((x) => x !== m.id) : [...(s.selecting ?? []), m.id] }));
 
   const del = () => {
-    if (getState().ui.confirmDelete && !confirm('Удалить сообщение?')) return;
+    if (getState().ui.confirmDelete && !confirm(tr('Удалить сообщение?'))) return;
     updateChat(chatId, (c) => void (c.messages = c.messages.filter((x) => x.id !== m.id)));
   };
 
@@ -87,47 +88,47 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
       <div className="msg-body">
         <div className="msg-head">
           <span className="msg-name">{m.name}</span>
-          {m.isUser && <span className="tag">вы</span>}
+          {m.isUser && <span className="tag">{tr('вы')}</span>}
           {m.hidden && (
-            <span className="tag" title="Сообщение не отправляется модели">
-              скрыто
+            <span className="tag" title={tr('Сообщение не отправляется модели')}>
+              {tr('скрыто')}
             </span>
           )}
           {m.bookmark && (
-            <button type="button" className="tag" title="Открыть контрольную точку" onClick={() => setState({ activeChatId: m.bookmark! })}>
-              <Flag size={10} /> точка
+            <button type="button" className="tag" title={tr('Открыть контрольную точку')} onClick={() => setState({ activeChatId: m.bookmark! })}>
+              <Flag size={10} /> {tr('точка')}
             </button>
           )}
           {meta && <span className="msg-meta">{meta}</span>}
           {translateOn && m.translation && (
-            <button type="button" className="tag" title="Переключить оригинал/перевод" onClick={() => setShowOriginal(!showOriginal)}>
-              {showOriginal ? 'оригинал' : 'перевод'}
+            <button type="button" className="tag" title={tr('Переключить оригинал/перевод')} onClick={() => setShowOriginal(!showOriginal)}>
+              {showOriginal ? tr('оригинал') : tr('перевод')}
             </button>
           )}
           {!selecting && !editing && !streaming && (
-            <div className="msg-tools" role="toolbar" aria-label="Действия с сообщением">
-              <IconBtn size="sm" bare className="keep" icon={<Pencil size={15} />} label="Изменить" onClick={() => setState({ editingMessageId: m.id })} />
+            <div className="msg-tools" role="toolbar" aria-label={tr('Действия с сообщением')}>
+              <IconBtn size="sm" bare className="keep" icon={<Pencil size={15} />} label={tr('Изменить')} onClick={() => setState({ editingMessageId: m.id })} />
               <IconBtn
                 size="sm"
                 bare
                 icon={<Copy size={15} />}
-                label="Копировать"
+                label={tr('Копировать')}
                 onClick={() => {
                   void navigator.clipboard?.writeText(m.text);
-                  toast('Скопировано');
+                  toast(tr('Скопировано'));
                 }}
               />
-              <IconBtn size="sm" bare icon={<GitBranch size={15} />} label="Создать ветку" onClick={() => branchChat(chatId, m.id)} />
-              <IconBtn size="sm" bare icon={<Flag size={15} />} label="Контрольная точка" onClick={() => branchChat(chatId, m.id, true)} />
-              <IconBtn size="sm" bare icon={<Volume2 size={15} />} label="Озвучить" onClick={() => speak(m.text)} />
+              <IconBtn size="sm" bare icon={<GitBranch size={15} />} label={tr('Создать ветку')} onClick={() => branchChat(chatId, m.id)} />
+              <IconBtn size="sm" bare icon={<Flag size={15} />} label={tr('Контрольная точка')} onClick={() => branchChat(chatId, m.id, true)} />
+              <IconBtn size="sm" bare icon={<Volume2 size={15} />} label={tr('Озвучить')} onClick={() => speak(m.text)} />
               <IconBtn
                 size="sm"
                 bare
                 icon={m.hidden ? <Eye size={15} /> : <EyeOff size={15} />}
-                label={m.hidden ? 'Показать ИИ' : 'Скрыть от ИИ'}
+                label={m.hidden ? tr('Показать ИИ') : tr('Скрыть от ИИ')}
                 onClick={() => updateMessage(chatId, m.id, (x) => void (x.hidden = !x.hidden))}
               />
-              <IconBtn size="sm" bare className="keep danger" icon={<Trash2 size={15} />} label="Удалить" onClick={del} />
+              <IconBtn size="sm" bare className="keep danger" icon={<Trash2 size={15} />} label={tr('Удалить')} onClick={del} />
             </div>
           )}
         </div>
@@ -135,7 +136,7 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
         {reasoning && showReasoning && (
           <details className="reasoning" open={Boolean(streaming && !streaming.text)}>
             <summary>
-              <Brain size={14} /> Рассуждения модели{streaming && !streaming.text ? '…' : ''}
+              <Brain size={14} /> {tr('Рассуждения модели')}{streaming && !streaming.text ? '…' : ''}
             </summary>
             <div className="scroll">{reasoning}</div>
           </details>
@@ -144,7 +145,7 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
         {editing ? (
           <Editor chatId={chatId} m={m} />
         ) : generatingThis && !text ? (
-          <span className="typing" aria-label="Печатает">
+          <span className="typing" aria-label={tr('Печатает')}>
             <i />
             <i />
             <i />
@@ -165,13 +166,13 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
           (ui.showGenTime && m.genTime && !streaming) || (ui.swipeArrows && (m.swipes.length > 1 || isLastChar))
         ) ? (
           <div className="msg-foot">
-            <span className="msg-meta">{ui.showGenTime && m.genTime && !streaming ? `сгенерировано за ${(m.genTime / 1000).toFixed(1).replace('.', ',')} с` : ''}</span>
+            <span className="msg-meta">{ui.showGenTime && m.genTime && !streaming ? tr('сгенерировано за {0} с', (m.genTime / 1000).toFixed(1).replace('.', ',')) : ''}</span>
             {ui.swipeArrows && (m.swipes.length > 1 || isLastChar) && (
-              <div className="swipes" role="group" aria-label="Варианты ответа">
+              <div className="swipes" role="group" aria-label={tr('Варианты ответа')}>
                 <IconBtn
                   size="sm"
                   icon={<ChevronLeft size={16} />}
-                  label="Предыдущий вариант"
+                  label={tr('Предыдущий вариант')}
                   disabled={m.swipeId === 0 || Boolean(streaming)}
                   onClick={() => void swipe(chatId, m.id, -1)}
                 />
@@ -181,7 +182,7 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
                 <IconBtn
                   size="sm"
                   icon={<ChevronRight size={16} />}
-                  label={m.swipeId === m.swipes.length - 1 ? 'Новый вариант' : 'Следующий вариант'}
+                  label={m.swipeId === m.swipes.length - 1 ? tr('Новый вариант') : tr('Следующий вариант')}
                   disabled={Boolean(streaming) || (m.swipeId === m.swipes.length - 1 && !isLastChar)}
                   onClick={() => void swipe(chatId, m.id, 1)}
                 />
@@ -229,12 +230,12 @@ function Editor({ chatId, m }: { chatId: string; m: Message }) {
         }}
       />
       <div className="row" style={{ justifyContent: 'flex-end' }}>
-        <span className="sub spacer">Ctrl+Enter — сохранить, Esc — отмена</span>
+        <span className="sub spacer">{tr('Ctrl+Enter — сохранить, Esc — отмена')}</span>
         <button type="button" className="btn sm" onClick={cancel}>
-          <X size={15} /> Отмена
+          <X size={15} /> {tr('Отмена')}
         </button>
         <button type="button" className="btn sm primary" onClick={save}>
-          <Check size={15} /> Сохранить
+          <Check size={15} /> {tr('Сохранить')}
         </button>
       </div>
     </div>

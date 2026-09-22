@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useState } from 'react';
 import { Copy, Download, Image as ImageIcon, Plus, Save, Trash2, Upload } from 'lucide-react';
 import { activeChat, chatOwnerName, currentPersona, getState, setState, toast, updateChat, upsertPersona, useStore } from '../store';
@@ -5,7 +6,7 @@ import type { Persona } from '../types';
 import { Avatar, Divider, Field, IconBtn, NumInput, Panel, SearchInput, Select, Switch } from '../components/ui';
 import { download, estimateTokens, pickFiles, plural, readDataUrl, shrinkImage, uid } from '../lib/util';
 
-function blankPersona(name = 'Новая персона'): Persona {
+function blankPersona(name = tr('Новая персона')): Persona {
   return { id: uid(), name, description: '', position: 'in_prompt', depth: 2, role: 'system', createdAt: Date.now() };
 }
 
@@ -25,7 +26,7 @@ export function PersonaPage() {
     setState({ editingPersonaId: p.id, defaultPersonaId: p.id });
     const chat = activeChat(getState());
     if (chat?.personaId) updateChat(chat.id, (c) => void (c.personaId = p.id));
-    toast(`Вы играете за: ${p.name}`);
+    toast(tr('Вы играете за: {0}', p.name));
   };
 
   const chatCount = (id: string) => Object.values(chats).filter((c) => c.personaId === id).length;
@@ -35,12 +36,12 @@ export function PersonaPage() {
       <Panel
         className="fill"
         style={{ flex: '1 1 0' }}
-        title="Мои персоны"
+        title={tr('Мои персоны')}
         actions={
           <>
             <IconBtn
               icon={<Upload size={16} />}
-              label="Импорт персон (JSON)"
+              label={tr('Импорт персон (JSON)')}
               onClick={async () => {
                 const [f] = await pickFiles('.json');
                 if (!f) return;
@@ -55,17 +56,17 @@ export function PersonaPage() {
                     }
                     return { personas: next };
                   });
-                  toast(`Импортировано персон: ${arr.length}`, 'success');
+                  toast(tr('Импортировано персон: {0}', arr.length), 'success');
                 } catch (e) {
-                  toast('Ошибка импорта: ' + (e as Error).message, 'error');
+                  toast(tr('Ошибка импорта: ') + (e as Error).message, 'error');
                 }
               }}
             />
-            <IconBtn icon={<Download size={16} />} label="Экспорт персон" onClick={() => download('personas.json', JSON.stringify({ personas: Object.values(getState().personas) }, null, 2))} />
+            <IconBtn icon={<Download size={16} />} label={tr('Экспорт персон')} onClick={() => download('personas.json', JSON.stringify({ personas: Object.values(getState().personas) }, null, 2))} />
           </>
         }
       >
-        <SearchInput value={q} onChange={setQ} placeholder="Поиск персон" />
+        <SearchInput value={q} onChange={setQ} placeholder={tr('Поиск персон')} />
         <div className="persona-grid scroll grow">
           {list.map((p) => {
             const n = chatCount(p.id);
@@ -75,7 +76,7 @@ export function PersonaPage() {
                 <span className="h3" style={{ fontSize: 20 }}>
                   {p.name}
                 </span>
-                <span className="li-sub">{p.id === defaultId ? 'по умолчанию' : n ? `${n} ${plural(n, 'чат', 'чата', 'чатов')}` : '—'}</span>
+                <span className="li-sub">{p.id === defaultId ? tr('по умолчанию') : n ? `${n} ${plural(n, 'чат', 'чата', 'чатов')}` : '—'}</span>
               </button>
             );
           })}
@@ -89,12 +90,12 @@ export function PersonaPage() {
             }}
           >
             <Plus size={22} />
-            Создать персону
+            {tr('Создать персону')}
           </button>
         </div>
-        <div className="sub">Персона — это вы в истории: имя и описание подставляются вместо {'{{user}}'}.</div>
+        <div className="sub">{tr('Персона — это вы в истории: имя и описание подставляются вместо')} {'{{user}}'}.</div>
       </Panel>
-      {editing ? <PersonaEditor key={editing.id} p={editing} /> : <Panel className="fill" style={{ flex: '1.3 1 0' }} title="Редактор персоны"><div className="empty">Создайте персону</div></Panel>}
+      {editing ? <PersonaEditor key={editing.id} p={editing} /> : <Panel className="fill" style={{ flex: '1.3 1 0' }} title={tr('Редактор персоны')}><div className="empty">{tr('Создайте персону')}</div></Panel>}
     </div>
   );
 }
@@ -120,16 +121,16 @@ function PersonaEditor({ p }: { p: Persona }) {
 
   const save = () => {
     upsertPersona(d);
-    toast('Персона сохранена', 'success');
+    toast(tr('Персона сохранена'), 'success');
   };
 
   return (
-    <Panel className="fill" style={{ flex: '1.3 1 0' }} title="Редактор персоны">
+    <Panel className="fill" style={{ flex: '1.3 1 0' }} title={tr('Редактор персоны')}>
       <div className="body scroll grow" style={{ paddingRight: 4 }}>
         <div className="row" style={{ gap: 24, alignItems: 'flex-start' }}>
           <button
             type="button"
-            title="Сменить аватар"
+            title={tr('Сменить аватар')}
             onClick={async () => {
               const [f] = await pickFiles('image/*');
               if (f) setD({ ...d, avatar: await shrinkImage(await readDataUrl(f), 512) });
@@ -138,7 +139,7 @@ function PersonaEditor({ p }: { p: Persona }) {
             <Avatar src={d.avatar} name={d.name} size={108} glow />
           </button>
           <div className="col grow" style={{ gap: 12 }}>
-            <Field label="Имя">
+            <Field label={tr('Имя')}>
               <input className="input big-name" value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} />
             </Field>
             <div className="row wrap">
@@ -150,25 +151,25 @@ function PersonaEditor({ p }: { p: Persona }) {
                   if (f) setD({ ...d, avatar: await shrinkImage(await readDataUrl(f), 512) });
                 }}
               >
-                <ImageIcon size={15} /> Сменить аватар
+                <ImageIcon size={15} /> {tr('Сменить аватар')}
               </button>
               <button
                 type="button"
                 className="btn sm"
                 onClick={() => {
-                  const c = { ...d, id: uid(), name: d.name + ' (копия)', createdAt: Date.now() };
+                  const c = { ...d, id: uid(), name: d.name + tr(' (копия)'), createdAt: Date.now() };
                   upsertPersona(c);
                   setState({ editingPersonaId: c.id });
                 }}
               >
-                <Copy size={15} /> Дублировать
+                <Copy size={15} /> {tr('Дублировать')}
               </button>
               <button
                 type="button"
                 className="btn sm danger"
                 disabled={Object.keys(getState().personas).length < 2}
                 onClick={() => {
-                  if (!confirm(`Удалить персону «${p.name}»?`)) return;
+                  if (!confirm(tr('Удалить персону «{0}»?', p.name))) return;
                   setState((s) => {
                     const personas = { ...s.personas };
                     delete personas[p.id];
@@ -177,59 +178,59 @@ function PersonaEditor({ p }: { p: Persona }) {
                   });
                 }}
               >
-                <Trash2 size={15} /> Удалить
+                <Trash2 size={15} /> {tr('Удалить')}
               </button>
             </div>
           </div>
         </div>
-        <Field label="Описание">
-          <textarea className="textarea serif scroll" rows={7} value={d.description} placeholder="Кто вы, как выглядите, чем живёте…" onChange={(e) => setD({ ...d, description: e.target.value })} />
+        <Field label={tr('Описание')}>
+          <textarea className="textarea serif scroll" rows={7} value={d.description} placeholder={tr('Кто вы, как выглядите, чем живёте…')} onChange={(e) => setD({ ...d, description: e.target.value })} />
         </Field>
         <div className="grid2">
-          <Field label="Где размещать описание">
+          <Field label={tr('Где размещать описание')}>
             <Select
               value={d.position}
               onChange={(v) => setD({ ...d, position: v })}
               options={[
-                { value: 'in_prompt', label: 'В описании персонажа' },
-                { value: 'top_an', label: 'Над заметкой автора' },
-                { value: 'bottom_an', label: 'Под заметкой автора' },
-                { value: 'at_depth', label: 'На глубине в чате' },
-                { value: 'none', label: 'Не отправлять' },
+                { value: 'in_prompt', label: tr('В описании персонажа') },
+                { value: 'top_an', label: tr('Над заметкой автора') },
+                { value: 'bottom_an', label: tr('Под заметкой автора') },
+                { value: 'at_depth', label: tr('На глубине в чате') },
+                { value: 'none', label: tr('Не отправлять') },
               ]}
             />
           </Field>
-          <Field label="Роль при размещении на глубине">
+          <Field label={tr('Роль при размещении на глубине')}>
             <Select
               value={d.role}
               onChange={(v) => setD({ ...d, role: v })}
               options={[
-                { value: 'system', label: 'Система' },
-                { value: 'user', label: 'Пользователь' },
-                { value: 'assistant', label: 'Ассистент' },
+                { value: 'system', label: tr('Система') },
+                { value: 'user', label: tr('Пользователь') },
+                { value: 'assistant', label: tr('Ассистент') },
               ]}
             />
           </Field>
           {d.position === 'at_depth' && (
-            <Field label="Глубина">
+            <Field label={tr('Глубина')}>
               <NumInput value={d.depth} min={0} max={999} onChange={(v) => setD({ ...d, depth: v })} />
             </Field>
           )}
           <PersonaLorebook value={d.lorebookId} onChange={(v) => setD({ ...d, lorebookId: v || undefined })} />
         </div>
-        <Divider title="Привязки" />
+        <Divider title={tr('Привязки')} />
         <div className="col" style={{ gap: 10 }}>
-          <Switch label="Использовать для новых чатов" checked={defaultId === p.id} onChange={(v) => v && setState({ defaultPersonaId: p.id })} />
+          <Switch label={tr('Использовать для новых чатов')} checked={defaultId === p.id} onChange={(v) => v && setState({ defaultPersonaId: p.id })} />
           <Switch
-            label="Привязать к этому чату"
-            hint={chat ? `«${chat.name}»` : 'нет открытого чата'}
+            label={tr('Привязать к этому чату')}
+            hint={chat ? `«${chat.name}»` : tr('нет открытого чата')}
             disabled={!chat}
             checked={chat?.personaId === p.id}
             onChange={(v) => chat && updateChat(chat.id, (c) => void (c.personaId = v ? p.id : undefined))}
           />
           {chat?.ownerType === 'char' && (
             <Switch
-              label={`Привязать к персонажу «${ownerName}»`}
+              label={tr('Привязать к персонажу «{0}»', ownerName)}
               checked={charPersona[chat.ownerId] === p.id}
               onChange={(v) =>
                 setState((s) => {
@@ -245,10 +246,10 @@ function PersonaEditor({ p }: { p: Persona }) {
       </div>
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <span className="sub">
-          {estimateTokens(d.description)} {plural(estimateTokens(d.description), 'токен', 'токена', 'токенов')} в описании
+          {estimateTokens(d.description)} {plural(estimateTokens(d.description), 'токен', 'токена', 'токенов')} {tr('в описании')}
         </span>
         <button type="button" className="btn primary" disabled={!dirty} onClick={save}>
-          <Save size={15} /> {dirty ? 'Сохранить' : 'Сохранено'}
+          <Save size={15} /> {dirty ? tr('Сохранить') : tr('Сохранено')}
         </button>
       </div>
     </Panel>
@@ -258,8 +259,8 @@ function PersonaEditor({ p }: { p: Persona }) {
 function PersonaLorebook({ value, onChange }: { value?: string; onChange: (v: string) => void }) {
   const books = useStore((s) => s.lorebooks);
   return (
-    <Field label="Лорбук персоны">
-      <Select value={value ?? ''} onChange={onChange} options={[{ value: '', label: 'Нет' }, ...Object.values(books).map((b) => ({ value: b.id, label: b.name }))]} />
+    <Field label={tr('Лорбук персоны')}>
+      <Select value={value ?? ''} onChange={onChange} options={[{ value: '', label: tr('Нет') }, ...Object.values(books).map((b) => ({ value: b.id, label: b.name }))]} />
     </Field>
   );
 }

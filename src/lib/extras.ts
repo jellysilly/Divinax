@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 // Перевод (Google Translate без ключа) и определение эмоции для спрайтов.
 import { getState, toast, updateMessage } from '../store';
 
@@ -35,7 +36,7 @@ export async function translateText(text: string, target: string): Promise<strin
     }
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${encodeURIComponent(target)}&dt=t&q=${encodeURIComponent(c)}`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`Переводчик ответил ${res.status}`);
+    if (!res.ok) throw new Error(tr('Переводчик ответил {0}', res.status));
     const j = await res.json();
     out.push((j[0] as [string][]).map((x) => x[0]).join(''));
   }
@@ -50,7 +51,7 @@ export async function translateMessage(chatId: string, messageId: string) {
     const t = await translateText(m.text, s.ext.translate.target);
     updateMessage(chatId, messageId, (x) => void (x.translation = t));
   } catch (e) {
-    toast('Перевод не удался: ' + (e as Error).message, 'error');
+    toast(tr('Перевод не удался: ') + (e as Error).message, 'error');
   }
 }
 

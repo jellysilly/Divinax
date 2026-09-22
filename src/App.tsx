@@ -1,3 +1,4 @@
+import { setLang, tr } from './lib/i18n';
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { activeChat, setState, toast, useStore } from './store';
@@ -41,20 +42,26 @@ function useTheme() {
   }, [ui]);
 }
 
-function Background() {
-  const url = useStore((s) => {
+function useActiveBackground() {
+  return useStore((s) => {
     const chat = activeChat(s);
     const id = (s.ui.perChatBg && chat?.background) || s.ui.activeBg;
-    return s.ui.backgrounds.find((b) => b.id === id)?.url ?? '';
+    return s.ui.backgrounds.find((b) => b.id === id);
   });
+}
+
+function Background() {
+  const bg = useActiveBackground();
   const fit = useStore((s) => s.ui.bgFit);
   const dim = useStore((s) => s.ui.dimBg);
-  if (!url) return null;
+  // «Прозрачный» — остаётся звёздное небо самого приложения
+  if (!bg || bg.color === 'transparent' || (!bg.url && !bg.color)) return null;
+  if (bg.color) return <div className="app-bg solid" style={{ backgroundColor: bg.color }} />;
   return (
     <div
       className={`app-bg ${dim ? 'dim' : ''}`}
       style={{
-        backgroundImage: `url("${url}")`,
+        backgroundImage: `url("${bg.url}")`,
         backgroundSize: fit === 'stretch' ? '100% 100%' : fit,
       }}
     />
@@ -68,7 +75,7 @@ function Toasts() {
       {toasts.map((t) => (
         <div key={t.id} className={`toast ${t.kind}`}>
           <span className="grow">{t.text}</span>
-          <button type="button" aria-label="Закрыть" onClick={() => setState((s) => ({ toasts: s.toasts.filter((x) => x.id !== t.id) }))}>
+          <button type="button" aria-label={tr('Закрыть')} onClick={() => setState((s) => ({ toasts: s.toasts.filter((x) => x.id !== t.id) }))}>
             <X size={14} />
           </button>
         </div>
@@ -83,6 +90,11 @@ export default function App() {
   const mobileMenu = useStore((s) => s.mobileMenu);
   const twinkle = useStore((s) => s.ui.twinkle);
   const avatarStyle = useStore((s) => s.ui.avatarStyle);
+  const avatarPosition = useStore((s) => s.ui.avatarPosition);
+  const lang = useStore((s) => s.ui.language);
+  const lightBg = useActiveBackground()?.color?.toLowerCase() === '#ffffff';
+  // язык выставляется до отрисовки детей: tr() читает его напрямую
+  setLang(lang);
   useTheme();
 
   useEffect(() => {
@@ -127,7 +139,8 @@ export default function App() {
   }
 
   return (
-    <div className={`app ${twinkle ? 'twinkle' : ''} av-${avatarStyle}`}>
+    // key={lang}: при смене языка дерево перерисовывается целиком
+    <div key={lang} className={`app ${twinkle ? 'twinkle' : ''} av-${avatarStyle} avpos-${avatarPosition} ${lightBg ? 'bg-light' : ''}`}>
       <Background />
       <Ornaments />
       <Header />

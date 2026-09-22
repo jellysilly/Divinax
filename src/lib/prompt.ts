@@ -1,3 +1,4 @@
+import { tr } from './i18n';
 // Сборка промпта: менеджер промптов для Chat Completion и шаблон контекста + Instruct для Text Completion.
 import type { Character, Chat, InstructTemplate, Message, Persona, Role } from '../types';
 import { activePreset, currentPersona, type State } from '../store';
@@ -47,7 +48,7 @@ export function speakingCharacter(s: State, chat: Chat, charId?: string): Charac
 }
 
 export function macroEnv(s: State, chat: Chat, char?: Character, persona?: Persona): MacroEnv {
-  const user = persona?.name || 'Вы';
+  const user = persona?.name || tr('Вы');
   const msgs = chat.messages.filter((m) => !m.isSystem);
   const last = msgs[msgs.length - 1];
   const lastUser = [...msgs].reverse().find((m) => m.isUser);
@@ -107,7 +108,7 @@ function activeBooks(s: State, chat: Chat, char?: Character, persona?: Persona) 
 
 function displayName(s: State, m: Message, userName: string): string {
   if (m.isUser) return m.name || userName;
-  return m.name || (m.charId ? s.characters[m.charId]?.name : '') || 'Персонаж';
+  return m.name || (m.charId ? s.characters[m.charId]?.name : '') || tr('Персонаж');
 }
 
 export function buildPrompt(s: State, o: BuildOptions): BuiltPrompt {
@@ -156,17 +157,17 @@ export function buildPrompt(s: State, o: BuildOptions): BuiltPrompt {
   if (persona?.description && persona.position === 'bottom_an') anText = (anText ? anText + '\n' : '') + sub(persona.description);
   if (wi.anTop) anText = wi.anTop + (anText ? '\n' + anText : '');
   if (wi.anBottom) anText = (anText ? anText + '\n' : '') + wi.anBottom;
-  if (anText) inj.push({ depth: an.depth, role: an.role, content: anText, name: 'Заметка автора' });
+  if (anText) inj.push({ depth: an.depth, role: an.role, content: anText, name: tr('Заметка автора') });
   if (persona?.description && persona.position === 'at_depth')
-    inj.push({ depth: persona.depth, role: persona.role, content: sub(persona.description), name: 'Персона (глубина)' });
+    inj.push({ depth: persona.depth, role: persona.role, content: sub(persona.description), name: tr('Персона (глубина)') });
   if (char?.depth_prompt?.prompt?.trim())
-    inj.push({ depth: char.depth_prompt.depth, role: char.depth_prompt.role, content: sub(char.depth_prompt.prompt), name: 'Заметка персонажа' });
-  for (const d of wi.depth) inj.push({ depth: d.depth, role: d.role, content: sub(d.content), name: 'Лорбук (глубина)' });
+    inj.push({ depth: char.depth_prompt.depth, role: char.depth_prompt.role, content: sub(char.depth_prompt.prompt), name: tr('Заметка персонажа') });
+  for (const d of wi.depth) inj.push({ depth: d.depth, role: d.role, content: sub(d.content), name: tr('Лорбук (глубина)') });
   const summary = s.ext.enabled.summarize && chat.summary?.trim()
     ? sub(s.ext.summarize.template.replace('{{summary}}', chat.summary))
     : '';
   if (summary && s.ext.summarize.position === 'depth')
-    inj.push({ depth: s.ext.summarize.depth, role: s.ext.summarize.role, content: summary, name: 'Пересказ' });
+    inj.push({ depth: s.ext.summarize.depth, role: s.ext.summarize.role, content: summary, name: tr('Пересказ') });
 
   const personaInPrompt = persona?.description && persona.position === 'in_prompt' ? env.persona! : '';
   const examples = parseExamples(env.mesExamples ?? '');
@@ -217,10 +218,10 @@ export function buildPrompt(s: State, o: BuildOptions): BuiltPrompt {
           content = isGroup ? groupDescriptions() : env.description ?? '';
           break;
         case 'charPersonality':
-          content = !isGroup && env.personality ? `Личность ${env.char}: ${env.personality}` : '';
+          content = !isGroup && env.personality ? tr('Личность {0}: {1}', env.char, env.personality) : '';
           break;
         case 'scenario':
-          content = env.scenario ? `Сценарий: ${env.scenario}` : '';
+          content = env.scenario ? tr('Сценарий: {0}', env.scenario) : '';
           break;
         case 'personaDescription':
           content = personaInPrompt;
@@ -251,7 +252,7 @@ export function buildPrompt(s: State, o: BuildOptions): BuiltPrompt {
     else if (kind === 'continue' && s.api.chatSource !== 'claude') tail.push({ role: 'system', content: sub(preset.continuePrompt) });
     else if (kind === 'quiet' && o.quietPrompt) tail.push({ role: 'system', content: sub(o.quietPrompt) });
     else if (isGroup && char && kind !== 'quiet') tail.push({ role: 'system', content: sub(preset.groupNudgePrompt) });
-    tail.forEach((t) => items.push({ name: 'Служебный промпт', tokens: tok(t.content) }));
+    tail.forEach((t) => items.push({ name: tr('Служебный промпт'), tokens: tok(t.content) }));
 
     const fixed = [...before, ...after, ...tail].reduce((a, m) => a + tok(m.content) + 4, 0);
     const injAll = [...inj, ...absolute];
@@ -290,7 +291,7 @@ export function buildPrompt(s: State, o: BuildOptions): BuiltPrompt {
         items.push({ name: x.name, tokens: tok(x.content) });
       });
     if (startPrompt.trim()) hist.unshift({ role: 'system', content: startPrompt });
-    items.push({ name: 'История чата', tokens: histTokens });
+    items.push({ name: tr('История чата'), tokens: histTokens });
 
     let messages = [...before.slice(0, historySlot), ...hist, ...before.slice(historySlot), ...after, ...tail];
     if (preset.squashSystem) messages = squash(messages);
@@ -326,13 +327,13 @@ export function buildPrompt(s: State, o: BuildOptions): BuiltPrompt {
     if (ctx.collapseNewlines) storyText = storyText.replace(/\n{3,}/g, '\n\n');
     const wrapSys = (t: string) => (ins ? ins.systemPrefix + t + ins.systemSuffix : t + '\n');
     const header = storyText.trim() ? wrapSys(storyText.trim()) : '';
-    items.push({ name: 'Шаблон контекста', tokens: tok(header) });
+    items.push({ name: tr('Шаблон контекста'), tokens: tok(header) });
 
     let exampleText = '';
     if (examples.length) {
       const sep = ctx.exampleSeparator ? sub(ctx.exampleSeparator) + '\n' : '';
       exampleText = [wi.emTop, ...examples.map((e) => sep + e), wi.emBottom].filter(Boolean).join('\n') + '\n';
-      items.push({ name: 'Примеры диалогов', tokens: tok(exampleText) });
+      items.push({ name: tr('Примеры диалогов'), tokens: tok(exampleText) });
     }
     const chatStart = ctx.chatStart ? sub(ctx.chatStart) + '\n' : '';
 
@@ -377,7 +378,7 @@ export function buildPrompt(s: State, o: BuildOptions): BuiltPrompt {
         lines.splice(pos, 0, ins ? ins.systemPrefix + x.content + ins.systemSuffix : x.content + '\n');
         items.push({ name: x.name, tokens: tok(x.content) });
       });
-    items.push({ name: 'История чата', tokens: histTokens });
+    items.push({ name: tr('История чата'), tokens: histTokens });
 
     let prompt = header + exampleText + chatStart + lines.join('') + tail;
     if (ctx.collapseNewlines) prompt = prompt.replace(/\n{3,}/g, '\n\n');
@@ -408,7 +409,7 @@ export function buildPrompt(s: State, o: BuildOptions): BuiltPrompt {
         const e = { ...env, char: c!.name };
         const parts = [
           substituteMacros(c!.description, e),
-          c!.personality ? `Личность ${c!.name}: ${substituteMacros(c!.personality, e)}` : '',
+          c!.personality ? tr('Личность {0}: {1}', c!.name, substituteMacros(c!.personality, e)) : '',
         ].filter(Boolean);
         return `### ${c!.name}\n${parts.join('\n')}`;
       })

@@ -1,3 +1,4 @@
+import { locale, tr } from '../lib/i18n';
 import { create } from 'zustand';
 import { persist, type PersistStorage, type StorageValue } from 'zustand/middleware';
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval';
@@ -30,6 +31,7 @@ import {
   DEFAULT_PRESET,
   DEFAULT_UI,
   DEFAULT_WI,
+  BUILTIN_BACKGROUNDS,
   INSTRUCT_TEMPLATES,
   SYS_PROMPTS,
 } from '../lib/defaults';
@@ -169,7 +171,13 @@ export const useStore = create<State>()(
     () => ({ ...initialPersisted, ...initialTransient }),
     {
       name: 'divinax',
-      version: 1,
+      version: 2,
+      migrate: (persisted, version) => {
+        const p = (persisted ?? {}) as Partial<PersistedState>;
+        // v2: английский по умолчанию (раньше выбора языка не было)
+        if (version < 2 && p.ui) p.ui = { ...p.ui, language: 'en' };
+        return p as PersistedState;
+      },
       storage: idbStorage(),
       partialize: (s) => {
         const out = {} as Record<string, unknown>;
@@ -183,7 +191,7 @@ export const useStore = create<State>()(
           ...p,
           // новые поля настроек подтягиваются из значений по умолчанию
           api: { ...DEFAULT_API, ...p.api, urls: { ...DEFAULT_API.urls, ...p.api?.urls } },
-          ui: { ...DEFAULT_UI, ...p.ui, colors: { ...DEFAULT_UI.colors, ...p.ui?.colors } },
+          ui: mergeUi(p.ui),
           wi: { ...DEFAULT_WI, ...p.wi },
           format: { ...DEFAULT_FORMAT, ...p.format },
           ext: {
@@ -209,6 +217,15 @@ export const useStore = create<State>()(
 );
 
 export const getState = useStore.getState;
+
+// Встроенные фоны всегда берутся из кода: старые картинки-фоны заменены цветами
+function mergeUi(saved?: Partial<UiSettings>): UiSettings {
+  const ui = { ...DEFAULT_UI, ...saved, colors: { ...DEFAULT_UI.colors, ...saved?.colors } };
+  const own = (saved?.backgrounds ?? []).filter((b) => !b.builtin);
+  ui.backgrounds = [...BUILTIN_BACKGROUNDS, ...own];
+  if (!ui.backgrounds.some((b) => b.id === ui.activeBg)) ui.activeBg = 'bg-transparent';
+  return ui;
+}
 export const setState = useStore.setState;
 
 // ── Селекторы-помощники ──
@@ -220,8 +237,8 @@ export const activePreset = (s: State): GenPreset =>
 
 export function chatOwnerName(s: State, chat?: Chat): string {
   if (!chat) return '';
-  if (chat.ownerType === 'group') return s.groups[chat.ownerId]?.name ?? 'Группа';
-  return s.characters[chat.ownerId]?.name ?? 'Персонаж';
+  if (chat.ownerType === 'group') return s.groups[chat.ownerId]?.name ?? tr('Группа');
+  return s.characters[chat.ownerId]?.name ?? tr('Персонаж');
 }
 
 export function currentPersona(s: State, chat?: Chat): Persona | undefined {
@@ -235,7 +252,7 @@ export function currentPersona(s: State, chat?: Chat): Persona | undefined {
   return s.personas[id] ?? Object.values(s.personas)[0];
 }
 
-export const userName = (s: State, chat?: Chat) => currentPersona(s, chat)?.name || 'Вы';
+export const userName = (s: State, chat?: Chat) => currentPersona(s, chat)?.name || tr('Вы');
 
 // ── Действия ──
 
@@ -300,7 +317,7 @@ export function newChatObject(ownerType: 'char' | 'group', ownerId: string, name
     id: uid(),
     ownerType,
     ownerId,
-    name: name ?? `Чат от ${new Date(now).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`,
+    name: name ?? tr('Чат от {0}', new Date(now).toLocaleString(locale(), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })),
     messages: [],
     authorNote: { ...DEFAULT_AUTHOR_NOTE },
     lorebookIds: [],

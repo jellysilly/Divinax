@@ -1,6 +1,7 @@
 import type {
   ApiSettings,
   AuthorNote,
+  Background,
   ContextTemplate,
   ExtensionSettings,
   FormatSettings,
@@ -19,7 +20,7 @@ export const DEFAULT_PROMPTS: PromptItem[] = [
     name: 'Основной промпт',
     role: 'system',
     content:
-      'Напиши следующую реплику {{char}} в вымышленном ролевом чате между {{char}} и {{user}}. Пиши живо, от лица персонажа, не говори и не действуй за {{user}}.',
+      "Write {{char}}'s next reply in a fictional roleplay chat between {{char}} and {{user}}. Write vividly and in character; never speak or act for {{user}}.",
     marker: false,
     enabled: true,
     system: true,
@@ -36,7 +37,7 @@ export const DEFAULT_PROMPTS: PromptItem[] = [
     name: 'Усилить описание',
     role: 'system',
     content:
-      'Если у тебя есть знания о {{char}}, дополни ими описание персонажа. Используй их, чтобы точнее передать характер и манеру речи.',
+      "If you have knowledge about {{char}}, add it to the character's description and use it to portray their personality and speech more accurately.",
     marker: false,
     enabled: false,
     system: true,
@@ -83,20 +84,20 @@ export const DEFAULT_PRESET: GenPreset = {
   swipes: 1,
   prompts: DEFAULT_PROMPTS,
   impersonationPrompt:
-    '[Напиши следующую реплику от лица {{user}}. Пиши только за {{user}}, в том же стиле, что и предыдущие сообщения {{user}}.]',
-  continuePrompt: '[Продолжи свой последний ответ с того места, где он оборвался. Не повторяй уже написанное.]',
-  newChatPrompt: '[Начало нового чата]',
-  newGroupChatPrompt: '[Начало нового группового чата. Участники: {{group}}]',
-  newExampleChatPrompt: '[Пример чата]',
-  groupNudgePrompt: '[Напиши следующую реплику только от лица {{char}}.]',
+    "[Write your next reply from the point of view of {{user}}, using the chat history so far as a guideline for the writing style of {{user}}. Don't write as {{char}} or system.]",
+  continuePrompt: '[Continue your last message without repeating its original content.]',
+  newChatPrompt: '[Start a new chat]',
+  newGroupChatPrompt: '[Start a new group chat. Group members: {{group}}]',
+  newExampleChatPrompt: '[Example Chat]',
+  groupNudgePrompt: "[Write the next reply only as {{char}}.]",
   squashSystem: false,
 };
 
 export const DEFAULT_STORY_STRING = `{{#if system}}{{system}}
 {{/if}}{{#if wiBefore}}{{wiBefore}}
 {{/if}}{{#if description}}{{description}}
-{{/if}}{{#if personality}}Личность {{char}}: {{personality}}
-{{/if}}{{#if scenario}}Сценарий: {{scenario}}
+{{/if}}{{#if personality}}{{char}}'s personality: {{personality}}
+{{/if}}{{#if scenario}}Scenario: {{scenario}}
 {{/if}}{{#if wiAfter}}{{wiAfter}}
 {{/if}}{{#if persona}}{{persona}}
 {{/if}}`;
@@ -125,9 +126,9 @@ export const CONTEXT_TEMPLATES: ContextTemplate[] = [
   {
     id: 'roleplay',
     name: 'Ролевая игра',
-    storyString: `{{#if system}}{{system}}\n\n{{/if}}### Мир и персонаж\n{{#if wiBefore}}{{wiBefore}}\n{{/if}}{{#if description}}{{description}}\n{{/if}}{{#if personality}}Характер: {{personality}}\n{{/if}}{{#if scenario}}Сцена: {{scenario}}\n{{/if}}{{#if wiAfter}}{{wiAfter}}\n{{/if}}{{#if persona}}\n### {{user}}\n{{persona}}\n{{/if}}`,
-    exampleSeparator: '### Пример',
-    chatStart: '### Начало ролевой игры',
+    storyString: `{{#if system}}{{system}}\n\n{{/if}}### World and character\n{{#if wiBefore}}{{wiBefore}}\n{{/if}}{{#if description}}{{description}}\n{{/if}}{{#if personality}}Personality: {{personality}}\n{{/if}}{{#if scenario}}Scene: {{scenario}}\n{{/if}}{{#if wiAfter}}{{wiAfter}}\n{{/if}}{{#if persona}}\n### {{user}}\n{{persona}}\n{{/if}}`,
+    exampleSeparator: '### Example',
+    chatStart: '### Roleplay begins',
     collapseNewlines: true,
     alwaysAddCharName: true,
     trimIncomplete: true,
@@ -233,23 +234,23 @@ export const SYS_PROMPTS: SysPromptPreset[] = [
     id: 'rp-immersive',
     name: 'Ролевая игра — погружение',
     content:
-      'Ты — {{char}}. Веди ролевую игру с {{user}}, оставаясь в образе. Описывай действия, окружение и ощущения живо и образно, двигай сюжет вперёд, проявляй инициативу. Никогда не пиши реплики и действия за {{user}}.',
+      'You are {{char}}. Roleplay with {{user}} and stay in character. Describe actions, surroundings and sensations vividly, move the story forward and take initiative. Never write lines or actions for {{user}}.',
   },
   {
     id: 'rp-concise',
     name: 'Ролевая игра — кратко',
-    content: 'Ты — {{char}}. Отвечай в образе, коротко: 1–3 абзаца. Не пиши за {{user}}.',
+    content: 'You are {{char}}. Reply in character and keep it short: 1–3 paragraphs. Never write for {{user}}.',
   },
   {
     id: 'narrator',
     name: 'Рассказчик',
     content:
-      'Ты — рассказчик интерактивной истории. Описывай мир, персонажей и последствия действий {{user}}. Давай {{user}} свободу выбора и не принимай решения за него.',
+      "You are the narrator of an interactive story. Describe the world, the characters and the consequences of {{user}}'s actions. Give {{user}} freedom of choice and never decide for them.",
   },
   {
     id: 'assistant',
     name: 'Ассистент',
-    content: 'Ты — полезный ассистент {{char}}. Отвечай {{user}} точно и по делу.',
+    content: 'You are {{char}}, a helpful assistant. Answer {{user}} accurately and to the point.',
   },
   { id: 'blank', name: 'Пустой', content: '' },
 ];
@@ -331,6 +332,13 @@ export const THEMES: Record<string, { name: string; colors: ThemeColors }> = {
   },
 };
 
+// Встроенные фоны: имена — ключи перевода, цвет вместо картинки
+export const BUILTIN_BACKGROUNDS: Background[] = [
+  { id: 'bg-transparent', name: 'Прозрачный', url: '', color: 'transparent', builtin: true },
+  { id: 'bg-white', name: 'Белый', url: '', color: '#ffffff', builtin: true },
+  { id: 'bg-black', name: 'Чёрный', url: '', color: '#000000', builtin: true },
+];
+
 export const DEFAULT_UI: UiSettings = {
   theme: 'night',
   colors: THEMES.night.colors,
@@ -340,6 +348,7 @@ export const DEFAULT_UI: UiSettings = {
   ornaments: 80,
   messageStyle: 'flat',
   avatarStyle: 'round',
+  avatarPosition: 'side',
   showTimestamps: true,
   showNumbers: true,
   showTokens: true,
@@ -349,13 +358,11 @@ export const DEFAULT_UI: UiSettings = {
   enterSends: true,
   confirmDelete: true,
   twinkle: false,
-  language: 'ru',
+  language: 'en',
   backgrounds: [
-    { id: 'bg-judge', name: 'Небесный суд', url: './demo/judge-banner.jpg', builtin: true },
-    { id: 'bg-window', name: 'Витраж', url: './ornaments/window.png', builtin: true },
-    { id: 'bg-vines', name: 'Розарий', url: './ornaments/vines.png', builtin: true },
+    ...BUILTIN_BACKGROUNDS,
   ],
-  activeBg: '',
+  activeBg: 'bg-transparent',
   perChatBg: true,
   dimBg: true,
   bgFit: 'cover',
@@ -388,8 +395,8 @@ export const DEFAULT_EXTENSIONS: ExtensionSettings = {
   },
   summarize: {
     prompt:
-      'Кратко перескажи ключевые события ролевой игры выше: кто что сделал, что изменилось, какие обещания и цели появились. Не больше {{words}} слов. Пиши в прошедшем времени, без вступлений.',
-    template: '[Краткое содержание предыдущих событий: {{summary}}]',
+      'Briefly summarize the key events of the roleplay above: who did what, what changed, what promises and goals appeared. No more than {{words}} words. Use the past tense, no preamble.',
+    template: '[Summary of previous events: {{summary}}]',
     every: 0,
     depth: 4,
     role: 'system',
@@ -408,9 +415,9 @@ export const DEFAULT_EXTENSIONS: ExtensionSettings = {
         name: 'Сцены',
         items: [
           { id: 'qr1', label: 'Продолжить сцену', message: '/continue', autoSend: true },
-          { id: 'qr2', label: 'Описать место', message: '*Я осматриваюсь вокруг.*', autoSend: false },
+          { id: 'qr2', label: 'Описать место', message: '*I look around.*', autoSend: false },
           { id: 'qr3', label: '/sum', message: '/sum', autoSend: true },
-          { id: 'qr4', label: 'OOC: пауза', message: '(OOC: давай ненадолго остановимся.)', autoSend: false },
+          { id: 'qr4', label: 'OOC: пауза', message: "(OOC: let's pause for a moment.)", autoSend: false },
         ],
       },
     ],
