@@ -661,9 +661,11 @@ select option { background: #0c0c10; color: var(--text); }
 /* ── Модальные окна ── */
 .overlay { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.65); display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); animation: fade 0.15s; }
 @keyframes fade { from { opacity: 0; } }
-.modal { width: min(640px, 100%); max-height: calc(100vh - 40px); overflow: auto; }
+.modal { width: min(640px, 100%); max-height: calc(100vh - 40px); max-height: calc(100dvh - 40px); background: rgba(var(--panel-rgb), 0.98); }
 .modal.wide { width: min(980px, 100%); }
-.modal .panel-head { position: sticky; top: -20px; background: rgba(var(--panel-rgb), 0.98); margin: -20px -20px 0; padding: 20px 20px 10px; z-index: 2; border-radius: 16px 16px 0 0; }
+/* шапка с крестиком всегда видна, прокручивается только содержимое */
+.modal-head { flex: none; }
+.modal-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; gap: 14px; margin-right: -8px; padding-right: 8px; }
 .modal-foot { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
 .lightbox img { max-width: 92vw; max-height: 88vh; border-radius: 12px; border: 1px solid var(--line); }
 
@@ -697,7 +699,8 @@ select option { background: #0c0c10; color: var(--text); }
 .m-tile b { font-size: 14px; font-weight: 700; }
 .m-tile small { font-size: 11.5px; color: var(--muted); line-height: 1.3; }
 .m-row { display: flex; align-items: center; gap: 14px; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; background: rgba(var(--panel-rgb), 0.8); text-align: left; width: 100%; }
-.sheet { position: fixed; left: 10px; right: 10px; bottom: 10px; z-index: 41; max-height: 80vh; overflow: auto; }
+.sheet { position: fixed; left: 10px; right: 10px; bottom: 10px; z-index: 41; max-height: 80vh; max-height: 80dvh; overflow: auto; }
+.sheet-host { display: contents; }
 .sheet .menu-item { height: 48px; }
 
 /* ── Положение аватара ── */
@@ -831,6 +834,6 @@ select option { background: #0c0c10; color: var(--text); }
   .toasts { left: 16px; right: 16px; top: 16px; max-width: none; }
   .char-hero { flex-direction: column; align-items: center; gap: 14px; }
   .popmenu { display: none; }
-  .modal { max-height: calc(100vh - 20px); }
+  .modal { max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); }
   .overlay { padding: 10px; align-items: flex-end; }
 }

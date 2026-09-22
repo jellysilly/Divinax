@@ -358,14 +358,21 @@ export function Modal({
   }, [onClose]);
   return (
     <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <Panel
-        className={`modal scroll ${wide ? 'wide' : ''}`}
-        title={title}
-        actions={<IconBtn icon={<X size={16} />} label={tr('Закрыть')} onClick={onClose} />}
-      >
-        {children}
-        {footer && <div className="modal-foot">{footer}</div>}
-      </Panel>
+      <section className={`panel modal ${wide ? 'wide' : ''}`} role="dialog" aria-modal="true">
+        <div className="panel-star">
+          <Star />
+        </div>
+        <div className="panel-head modal-head">
+          {typeof title === 'string' ? <h2 className="h2">{title}</h2> : title}
+          <div className="actions">
+            <IconBtn icon={<X size={16} />} label={tr('Закрыть')} onClick={onClose} />
+          </div>
+        </div>
+        <div className="modal-body scroll">
+          {children}
+          {footer && <div className="modal-foot">{footer}</div>}
+        </div>
+      </section>
     </div>
   );
 }
