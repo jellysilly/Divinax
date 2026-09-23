@@ -1,0 +1,59 @@
+# Собирает фронт и публикует его в релиз web-<ветка>: оттуда лаунчер для Android берёт обновления.
+name: Web build
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['android/**', 'README.md', 'img/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: web-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 30
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build:web
+
+      - name: Pack dist
+        env:
+          TZ: UTC
+        run: |
+          branch="${GITHUB_REF_NAME}"
+          channel="$(echo "$branch" | tr '/' '-')"
+          version="$(node -p "require('./package.json').version")"
+          commit="$(git rev-parse --short HEAD)"
+          date="$(git log -1 --date=format-local:%Y-%m-%dT%H:%M:%SZ --format=%cd)"
+          printf '{"version":"%s","commit":"%s","date":"%s","branch":"%s"}\n' "$version" "$commit" "$date" "$branch" > dist/version.json
+          cp dist/version.json version.json
+          (cd dist && zip -qr ../divinax-web.zip .)
+          git log -15 --format='• %s' > notes.md
+          echo "CHANNEL=$channel" >> "$GITHUB_ENV"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          echo "COMMIT=$commit" >> "$GITHUB_ENV"
+
+      - name: Publish release web-${{ env.CHANNEL }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="web-$CHANNEL"
+          gh release delete "$tag" --cleanup-tag -y || true
+          gh release create "$tag" divinax-web.zip version.json \
+            --target "$GITHUB_SHA" --prerelease \
+            --title "Фронт $VERSION · $COMMIT ($GITHUB_REF_NAME)" \
+            --notes-file notes.md

@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark light" />
+    <title>Divinax · лаунчер</title>
+    <link rel="stylesheet" href="launcher.css" />
+  </head>
+  <body>
+    <div class="frame" aria-hidden="true">
+      <img class="orn corner-l" src="ornaments/corner.png" alt="" />
+      <img class="orn corner-r" src="ornaments/corner.png" alt="" />
+      <img class="orn crest" src="ornaments/crest.png" alt="" />
+      <img class="orn candle-l" src="ornaments/candle-left.png" alt="" />
+      <img class="orn candle-r" src="ornaments/candle-right.png" alt="" />
+      <img class="orn wings" src="ornaments/wings.png" alt="" />
+    </div>
+
+    <div class="app">
+      <header class="top">
+        <div class="brand">
+          <span class="brand-star">✦</span>
+          <span class="brand-name">Divinax</span>
+          <span class="tag">лаунчер</span>
+        </div>
+        <div class="top-right">
+          <span class="versions" id="versions"></span>
+          <div class="top-icons">
+            <button class="icon-btn" data-act="theme" aria-label="Тема" id="themeBtn"></button>
+            <button class="icon-btn" data-act="help" aria-label="Справка"><i data-i="help"></i></button>
+            <button class="icon-btn" data-act="minimize" aria-label="Свернуть"><i data-i="minus"></i></button>
+            <button class="icon-btn" data-act="quit" aria-label="Закрыть"><i data-i="x"></i></button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Главный экран -->
+      <main class="grid" id="home">
+        <section class="card launch">
+          <div class="card-head">
+            <h2>Запуск</h2>
+            <span class="hint" id="autoHint"></span>
+          </div>
+          <div class="status">
+            <div class="emblem" id="emblem"><span class="e-ring"></span><span class="e-star">✦</span><span class="e-dot t"></span><span class="e-dot b"></span></div>
+            <div class="status-text">
+              <div class="label"><span class="dot" id="stateDot"></span>состояние</div>
+              <div class="state" id="stateTitle">…</div>
+              <div class="sub" id="stateSub"></div>
+            </div>
+            <div class="address">
+              <div class="label">адрес</div>
+              <div class="addr-field">
+                <code id="addr">http://127.0.0.1:8000</code>
+                <button class="icon-sm" data-act="copyAddr" aria-label="Копировать адрес"><i data-i="copy"></i></button>
+                <button class="icon-sm" data-act="openBrowser" aria-label="Открыть в браузере"><i data-i="external"></i></button>
+              </div>
+            </div>
+          </div>
+          <div class="btn-row" id="launchBtns"></div>
+          <div class="divider"><span>✦</span></div>
+          <div class="toggles">
+            <label class="tg"><input type="checkbox" data-pref="autostart" /><span class="sw"></span><span>Запускать фронт при открытии лаунчера</span></label>
+            <label class="tg"><input type="checkbox" data-pref="openAfterStart" /><span class="sw"></span><span>Открывать фронт после запуска</span></label>
+            <label class="tg"><input type="checkbox" data-pref="bootStart" /><span class="sw"></span><span>Запускать вместе с системой</span></label>
+            <label class="tg"><input type="checkbox" data-pref="openInApp" /><span class="sw"></span><span>Открывать во встроенном окне, а не в браузере</span></label>
+          </div>
+        </section>
+
+        <section class="card updates">
+          <div class="card-head">
+            <h2>Обновления</h2>
+            <span class="pill-badge" id="updBadge" hidden>✦ есть обновление</span>
+          </div>
+          <div class="versions-row">
+            <div>
+              <div class="label">сейчас</div>
+              <div class="ver" id="verNow">—</div>
+              <div class="ver-sub" id="verNowSub"></div>
+            </div>
+            <span class="ver-arrow" id="verArrow"><i data-i="chevronRight"></i></span>
+            <div id="verAvailBox">
+              <div class="label">доступна</div>
+              <div class="ver" id="verAvail">—</div>
+              <div class="ver-sub" id="verAvailSub"></div>
+            </div>
+            <button class="link" data-act="whatsNew" id="whatsNewBtn">Что нового</button>
+          </div>
+          <div class="label">ветка</div>
+          <div class="branch-row">
+            <div class="select">
+              <select id="channel" aria-label="Ветка обновлений"></select>
+              <i data-i="chevronDown"></i>
+            </div>
+            <label class="tg"><input type="checkbox" data-pref="checkOnLaunch" /><span class="sw"></span><span>Проверять при запуске</span></label>
+          </div>
+          <div class="upd-row">
+            <button class="btn primary wide" data-act="update" id="updBtn"><i data-i="download"></i><span>Обновить</span></button>
+            <button class="icon-btn round" data-act="check" id="checkBtn" aria-label="Проверить обновления"><i data-i="refresh"></i></button>
+          </div>
+          <div class="note center" id="checkNote"></div>
+        </section>
+
+        <section class="card service">
+          <div class="card-head">
+            <h2>Обслуживание</h2>
+            <span class="hint" id="backupHint"></span>
+          </div>
+          <div class="tiles">
+            <div class="tile">
+              <div class="tile-head">
+                <span class="tile-icon"><i data-i="archive"></i></span>
+                <div><h3>Экспорт бэкапа</h3><div class="sub" id="lastBackup"></div></div>
+              </div>
+              <p>Персонажи, чаты, лорбуки, персоны и настройки — в один .zip. Ключи API по желанию.</p>
+              <div class="tile-actions">
+                <button class="btn primary" data-act="export" id="exportBtn"><i data-i="download"></i><span>Сохранить бэкап</span></button>
+                <label class="tg"><input type="checkbox" data-pref="backupKeys" /><span class="sw"></span><span>с ключами API</span></label>
+              </div>
+            </div>
+            <div class="tile dashed">
+              <div class="tile-head">
+                <span class="tile-icon"><i data-i="upload"></i></span>
+                <div><h3>Загрузить бэкап</h3><div class="sub">.zip из экспорта или .json из фронта</div></div>
+              </div>
+              <p>Текущие данные заменятся, перед этим сохранится автобэкап.</p>
+              <div class="tile-actions">
+                <button class="btn" data-act="import" id="importBtn"><i data-i="folder"></i><span>Выбрать файл</span></button>
+              </div>
+            </div>
+            <div class="tile">
+              <div class="tile-head">
+                <span class="tile-icon"><i data-i="package"></i></span>
+                <div><h3>Переустановить фронт</h3><div class="sub">данные не затрагиваются</div></div>
+              </div>
+              <p>Заново распаковывает файлы установленной версии. Поможет, если фронт не открывается после обновления.</p>
+              <div class="tile-actions">
+                <button class="btn" data-act="reinstall" id="reinstallBtn"><i data-i="refresh"></i><span>Переустановить</span></button>
+              </div>
+            </div>
+            <div class="tile danger">
+              <div class="tile-head">
+                <span class="tile-icon"><i data-i="alert"></i></span>
+                <div><h3>Перезапуск с нуля</h3><div class="sub">необратимо</div></div>
+              </div>
+              <p>Удаляет персонажей, чаты, лорбуки и настройки. Фронт запустится как новый.</p>
+              <div class="tile-actions">
+                <button class="btn danger" data-act="resetAsk" id="resetBtn"><i data-i="trash"></i><span>Удалить данные и перезапустить</span></button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card journal">
+          <div class="card-head">
+            <h2>Журнал</h2>
+            <div class="head-icons">
+              <button class="icon-btn sm" data-act="copyLog" aria-label="Копировать журнал"><i data-i="copy"></i></button>
+              <button class="icon-btn sm" data-act="folder" aria-label="Папка с бэкапами"><i data-i="folder"></i></button>
+              <button class="icon-btn sm" data-act="shareLog" aria-label="Поделиться журналом"><i data-i="share"></i></button>
+              <button class="icon-btn sm" data-act="clearLog" aria-label="Очистить журнал"><i data-i="trash"></i></button>
+            </div>
+          </div>
+          <div class="log" id="log"></div>
+        </section>
+      </main>
+
+      <!-- Экран обновления -->
+      <main class="update-screen" id="updScreen" hidden>
+        <img class="bg-orn window" src="ornaments/window.png" alt="" aria-hidden="true" />
+        <img class="bg-orn rose" src="ornaments/rose.png" alt="" aria-hidden="true" />
+        <section class="card upd-card">
+          <div class="upd-head">
+            <div class="emblem big"><span class="e-ring"></span><span class="e-star">✦</span><span class="e-dot t"></span><span class="e-dot b"></span></div>
+            <div>
+              <div class="label">обновление</div>
+              <h1 id="updTitle">Обновляем</h1>
+              <div class="sub" id="updSub">Не закрывайте лаунчер — фронт запустится сам, когда всё будет готово</div>
+            </div>
+          </div>
+          <div class="progress-head"><span>Общий прогресс</span><span id="updPercent">0%</span></div>
+          <div class="progress"><div class="bar" id="updBar"></div></div>
+          <ol class="steps" id="updSteps"></ol>
+          <div class="log small" id="updLog"></div>
+          <div class="upd-foot">
+            <button class="btn" data-act="cancelUpdate" id="updCancel"><i data-i="x"></i><span>Отменить</span></button>
+            <span class="note" id="updNote">При ошибке останется прежняя версия фронта</span>
+          </div>
+        </section>
+      </main>
+
+      <footer class="foot">
+        <span id="footLeft">Лаунчер можно свернуть — фронт продолжит работать</span>
+        <button class="foot-right" data-act="folder"><i data-i="folder"></i><span>Бэкапы: <span id="footDir"></span></span></button>
+      </footer>
+    </div>
+
+    <!-- Модальные окна -->
+    <div class="modal-wrap" id="modal" hidden>
+      <div class="modal" id="modalBox" role="dialog" aria-modal="true"></div>
+    </div>
+
+    <div class="toast" id="toast" hidden></div>
+
+    <script src="launcher.js"></script>
+  </body>
+</html>

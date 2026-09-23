@@ -1,0 +1,60 @@
+# Собирает APK лаунчера (с вшитым фронтом) и публикует его в релиз launcher.
+name: Android launcher
+
+on:
+  push:
+    branches: [main]
+    paths: ['android/**', '.github/workflows/android-launcher.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 30
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build:web
+
+      - name: Build APK
+        working-directory: android
+        env:
+          DX_BRANCH: ${{ github.ref_name }}
+          DX_REPO: ${{ github.repository }}
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Rename
+        run: cp android/app/build/outputs/apk/release/app-release.apk DivinaxLauncher.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DivinaxLauncher
+          path: DivinaxLauncher.apk
+
+      - name: Publish release launcher
+        if: github.ref_name == 'main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete launcher --cleanup-tag -y || true
+          gh release create launcher DivinaxLauncher.apk \
+            --target "$GITHUB_SHA" --prerelease \
+            --title "Лаунчер для Android" \
+            --notes "APK лаунчера Divinax. Установите файл DivinaxLauncher.apk на телефон (разрешите установку из этого источника)."
