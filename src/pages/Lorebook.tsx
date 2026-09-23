@@ -1,11 +1,12 @@
 import { tr } from '../lib/i18n';
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Copy, Download, Link2, MoreHorizontal, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
-import { activeChat, getState, setState, toast, updateChat, upsertLorebook, useStore } from '../store';
+import { BookMarked, ChevronDown, ChevronRight, Copy, Download, Link2, MoreHorizontal, Pencil, Plus, Trash2, Upload, X } from 'lucide-react';
+import { activeChat, getState, openModal, setState, toast, updateChat, upsertLorebook, useStore } from '../store';
 import { WILogic, WIPosition, type LoreEntry, type Lorebook, type WorldInfoSettings } from '../types';
 import { Divider, Field, IconBtn, LazyInput, LazyTextarea, NumInput, Panel, SearchInput, Select, Slider, Switch, TagInput } from '../components/ui';
 import { LOGIC_LABELS, POSITION_LABELS, POSITION_SHORT, blankEntry, lorebookToST } from '../lib/worldinfo';
 import { importLorebookJson } from '../lib/importer';
+import { charHasBook, setCharBook } from '../lib/books';
 import { download, estimateTokens, pickFiles, safeName, uid } from '../lib/util';
 
 const setWI = (p: Partial<WorldInfoSettings>) => setState((s) => ({ wi: { ...s.wi, ...p } }));
@@ -98,7 +99,15 @@ export function LorebookPage() {
             setState((s) => {
               const lorebooks = { ...s.lorebooks };
               delete lorebooks[book.id];
-              return { lorebooks, editingLorebookId: '', wi: { ...s.wi, global: s.wi.global.filter((x) => x !== book.id) } };
+              // убираем лорбук у персонажей, чтобы не висели ссылки
+              const characters = Object.fromEntries(
+                Object.entries(s.characters).map(([id, c]) =>
+                  c.lorebookId === book.id || c.extraLorebookIds?.includes(book.id)
+                    ? [id, { ...c, lorebookId: c.lorebookId === book.id ? undefined : c.lorebookId, extraLorebookIds: c.extraLorebookIds?.filter((x) => x !== book.id) }]
+                    : [id, c],
+                ),
+              );
+              return { lorebooks, characters, editingLorebookId: '', wi: { ...s.wi, global: s.wi.global.filter((x) => x !== book.id) } };
             });
           }}
         />
@@ -165,6 +174,9 @@ function GlobalSettings({ book }: { book?: Lorebook }) {
           <Switch label={tr('Сканировать имена участников')} checked={wi.includeNames} onChange={(v) => setWI({ includeNames: v })} />
         </div>
         <Divider />
+        <button type="button" className="btn sm" style={{ alignSelf: 'flex-start' }} onClick={() => openModal('books')}>
+          <BookMarked size={14} /> {tr('Активные лорбуки')}
+        </button>
         <span className="label" style={{ marginBottom: 0 }}>
           {tr('Активны во всех чатах')}
         </span>
@@ -218,15 +230,10 @@ function GlobalSettings({ book }: { book?: Lorebook }) {
 }
 
 function CharBind({ charId, bookId }: { charId: string; bookId: string }) {
-  const ch = useStore((s) => s.characters[charId]);
-  if (!ch) return null;
-  return (
-    <Switch
-      label={tr('Лорбук персонажа «{0}»', ch.name)}
-      checked={ch.lorebookId === bookId}
-      onChange={(v) => setState((s) => ({ characters: { ...s.characters, [charId]: { ...ch, lorebookId: v ? bookId : undefined } } }))}
-    />
-  );
+  const name = useStore((s) => s.characters[charId]?.name);
+  const on = useStore((s) => charHasBook(s, charId, bookId));
+  if (!name) return null;
+  return <Switch label={tr('Лорбук персонажа «{0}»', name)} checked={on} onChange={(v) => setCharBook(charId, bookId, v)} />;
 }
 
 function Entries({ book, q, sort, open, setOpen }: { book: Lorebook; q: string; sort: Sort; open: number | null; setOpen: (v: number | null) => void }) {

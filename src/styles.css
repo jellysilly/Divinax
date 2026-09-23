@@ -847,3 +847,16 @@ select option { background: #0c0c10; color: var(--text); }
 .crop-box { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); border: 1px solid rgba(255, 255, 255, 0.85); box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6); pointer-events: none; }
 .crop-round { position: absolute; inset: 0; border-radius: 50%; border: 1px dashed rgba(255, 255, 255, 0.6); }
 .avatar-edit { display: flex; flex-direction: column; align-items: center; gap: 14px; flex: none; }
+
+/* ── Активные лорбуки ── */
+.book-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, 0.015); }
+.book-row.on { border-color: var(--line-strong); background: rgba(255, 255, 255, 0.05); }
+.book-row .book-icon { flex: none; color: var(--muted); }
+.book-row.on .book-icon { color: var(--strong); }
+.book-name { color: var(--strong); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.book-toggles { display: flex; align-items: center; gap: 6px; flex: none; flex-wrap: wrap; justify-content: flex-end; }
+.btn-count { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; margin-left: 6px; border-radius: 10px; font-size: 12px; background: rgba(255, 255, 255, 0.12); color: var(--strong); }
+@media (max-width: 760px) {
+  .book-row { flex-wrap: wrap; }
+  .book-toggles { order: 5; width: 100%; justify-content: flex-start; }
+}

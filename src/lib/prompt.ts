@@ -8,6 +8,7 @@ import { renderStoryString, substituteMacros, type MacroEnv } from './macros';
 import { applyRegex, scriptsFor } from './regex';
 import { estimateTokens } from './util';
 import { scanWorldInfo, type WIResult } from './worldinfo';
+import { bookSources } from './books';
 
 export type GenKind = 'normal' | 'swipe' | 'regenerate' | 'continue' | 'impersonate' | 'quiet';
 
@@ -95,15 +96,8 @@ export function parseExamples(text: string): string[] {
     .filter(Boolean);
 }
 
-function activeBooks(s: State, chat: Chat, char?: Character, persona?: Persona) {
-  const ids = new Set<string>(s.wi.global);
-  if (chat.ownerType === 'group') {
-    const g = s.groups[chat.ownerId];
-    g?.members.forEach((id) => s.characters[id]?.lorebookId && ids.add(s.characters[id]!.lorebookId!));
-  } else if (char?.lorebookId) ids.add(char.lorebookId);
-  chat.lorebookIds.forEach((id) => ids.add(id));
-  if (persona?.lorebookId) ids.add(persona.lorebookId);
-  return [...ids].map((id) => s.lorebooks[id]).filter(Boolean);
+function activeBooks(s: State, chat: Chat, persona?: Persona) {
+  return [...bookSources(s, chat, persona).keys()].map((id) => s.lorebooks[id]);
 }
 
 function displayName(s: State, m: Message, userName: string): string {
@@ -139,7 +133,7 @@ export function buildPrompt(s: State, o: BuildOptions): BuiltPrompt {
 
   // Лорбук
   const wi = scanWorldInfo({
-    books: activeBooks(s, chat, char, persona),
+    books: activeBooks(s, chat, persona),
     messages: history.map((m) => ({ name: displayName(s, m, userName), text: m.text })),
     settings: s.wi,
     maxContext: preset.maxContext,

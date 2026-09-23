@@ -40,7 +40,8 @@ export interface Character {
   fav: boolean;
   talkativeness: number;
   depth_prompt: DepthPrompt;
-  lorebookId?: string; // привязанный лорбук
+  lorebookId?: string; // привязанный лорбук (уходит в карточку при экспорте)
+  extraLorebookIds?: string[]; // дополнительные лорбуки персонажа
   gallery: string[]; // data URL
   extensions: Record<string, unknown>;
   createdAt: number;

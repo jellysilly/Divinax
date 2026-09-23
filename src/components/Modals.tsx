@@ -20,6 +20,7 @@ import {
 } from '../store';
 import type { ExtensionSettings, Group, QuickReply, RegexScript } from '../types';
 import { Avatar, BgThumb, Divider, Field, IconBtn, LazyInput, LazyTextarea, Modal, NumInput, Select, Seg, Slider, Switch } from './ui';
+import { ActiveBooksModal } from './BooksModal';
 import { AVATAR_CROP, BANNER_CROP, cropImage, pickAndCrop } from './Cropper';
 import { MACRO_HELP } from '../lib/macros';
 import { COMMANDS } from '../lib/slash';
@@ -70,6 +71,8 @@ export function Modals() {
       return <GroupModal id={(p as { id: string }).id} />;
     case 'tags':
       return <TagsModal />;
+    case 'books':
+      return <ActiveBooksModal />;
     case 'importUrl':
       return <ImportUrlModal />;
     case 'ext':

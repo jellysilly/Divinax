@@ -56,6 +56,7 @@ import { Avatar, IconBtn, LazyTextarea, NumInput, Panel, Select, Star, Switch } 
 import { closeChat, exportChat, importChatText, openChat, openOwner, startNewChat } from '../lib/chats';
 import { runGeneration, sendMessage, stopGeneration, summarizeChat } from '../lib/generate';
 import { runSlash } from '../lib/slash';
+import { bookSources } from '../lib/books';
 import { speak, startRecognition } from '../lib/speech';
 import { fmtDay, fmtDayTitle, pickFiles, plural, readDataUrl, shrinkImage, uid } from '../lib/util';
 import { generateImage } from '../lib/images';
@@ -281,7 +282,6 @@ function ChatView({ chat, onDrawer }: { chat: Chat; onDrawer: (d: 'left' | 'righ
   const owner = useStore((s) => (chat.ownerType === 'group' ? s.groups[chat.ownerId] : s.characters[chat.ownerId]));
   const selecting = useStore((s) => s.selecting);
   const name = owner?.name ?? tr('Неизвестно');
-  const char = chat.ownerType === 'char' ? useStore.getState().characters[chat.ownerId] : undefined;
   const cover = useStore((s) => {
     const c = chat.ownerType === 'char' ? s.characters[chat.ownerId] : undefined;
     if (c?.banner) return c.banner;
@@ -297,6 +297,7 @@ function ChatView({ chat, onDrawer }: { chat: Chat; onDrawer: (d: 'left' | 'righ
   });
   const avatar = sprite ?? (owner && 'avatar' in owner ? owner.avatar : undefined);
   const msgCount = chat.messages.length;
+  const bookCount = useStore((s) => bookSources(s, chat).size);
 
   return (
     <>
@@ -355,12 +356,11 @@ function ChatView({ chat, onDrawer }: { chat: Chat; onDrawer: (d: 'left' | 'righ
           <button
             type="button"
             className="btn framed"
-            onClick={() => {
-              if (char?.lorebookId) setState({ editingLorebookId: char.lorebookId });
-              setTab('lorebook');
-            }}
+            onClick={() => openModal('books')}
+            title={tr('Активные лорбуки')}
           >
             {tr('Лорбук')}
+            {bookCount > 0 && <span className="btn-count">{bookCount}</span>}
           </button>
           <Star size={10} />
           <button type="button" className="btn framed" onClick={() => openModal('gallery', chat.ownerId)}>
@@ -377,8 +377,9 @@ function ChatView({ chat, onDrawer }: { chat: Chat; onDrawer: (d: 'left' | 'righ
           {tr('Карточка')}
         </button>
         <Star size={10} />
-        <button type="button" className="btn framed" onClick={() => setTab('lorebook')}>
+        <button type="button" className="btn framed" onClick={() => openModal('books')} title={tr('Активные лорбуки')}>
           {tr('Лорбук')}
+          {bookCount > 0 && <span className="btn-count">{bookCount}</span>}
         </button>
         <Star size={10} />
         <button type="button" className="btn framed" onClick={() => openModal('chats')}>
@@ -709,6 +710,9 @@ function ChatMenu({ chat }: { chat: Chat }) {
       </MenuItem>
       <MenuItem icon={<Folder size={17} />} onClick={() => openModal('chats')}>
         {tr('Управление файлами чата')}
+      </MenuItem>
+      <MenuItem icon={<BookMarked size={17} />} onClick={() => openModal('books')}>
+        {tr('Активные лорбуки')}
       </MenuItem>
       <MenuItem icon={<FileText size={17} />} onClick={() => openModal('authorNote')}>
         {tr('Заметка автора')}

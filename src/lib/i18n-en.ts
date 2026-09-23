@@ -982,6 +982,22 @@ export const EN: Record<string, string> = {
   'Отвязать от пресета (сделать глобальным)': 'Unbind from preset (make global)',
   'Регексы работают, только пока выбран этот пресет': 'These regexes work only while this preset is selected',
   'Регексы пресета: {0}': 'Preset regexes: {0}',
+  'во всех чатах': 'in all chats',
+  'в этом чате': 'in this chat',
+  'персонаж «{0}»': 'character “{0}”',
+  'персонаж «{0}», доп.': 'character “{0}”, extra',
+  'персона «{0}»': 'persona “{0}”',
+  'Активные лорбуки': 'Active lorebooks',
+  'Сейчас работают {0} {1} · {2} {3}.': 'Active now: {0} {1} · {2} {3}.',
+  'Сейчас ни один лорбук не включён.': 'No lorebooks are active right now.',
+  'Включайте сколько угодно лорбуков сразу: во всех чатах, только в этом чате или для персонажа.': 'Turn on as many lorebooks as you like: in all chats, only in this chat, or for the character.',
+  'Поиск лорбука': 'Search lorebooks',
+  'Лорбуков пока нет. Создайте или импортируйте их во вкладке «Лорбук».': 'No lorebooks yet. Create or import them on the Lorebook tab.',
+  'выключен': 'off',
+  'Везде': 'Everywhere',
+  'Этот чат': 'This chat',
+  'Открыть лорбук': 'Open lorebook',
+  '«Везде» — во всех чатах. «Этот чат» — только здесь. «Персонаж» — во всех чатах с персонажем; первый такой лорбук считается основным и попадает в карточку при экспорте. Лорбук персоны включается на вкладке «Персона».': '“Everywhere” — in all chats. “This chat” — only here. “Character” — in every chat with the character; the first such lorebook is the primary one and is embedded in the card on export. The persona lorebook is set on the Persona tab.',
 };
 
 // Формы для plural(n, 'один', 'два', 'пять'): ключ — третья форма
@@ -990,4 +1006,6 @@ export const EN_PLURALS: Record<string, [string, string]> = {
   'персонажей': ['character', 'characters'],
   'чатов': ['chat', 'chats'],
   'токенов': ['token', 'tokens'],
+  'лорбуков': ['lorebook', 'lorebooks'],
+  'записей': ['entry', 'entries'],
 };
