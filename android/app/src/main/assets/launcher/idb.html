@@ -1,0 +1,83 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Divinax · служебная страница лаунчера</title>
+<script>
+  // Открывается скрытым WebView лаунчера на адресе фронта (http://127.0.0.1:8000),
+  // поэтому видит ту же IndexedDB, что и фронт: база keyval-store, ключ divinax (zustand persist).
+  (async () => {
+    const q = new URLSearchParams(location.search);
+    const base = location.pathname.slice(0, location.pathname.lastIndexOf('/') + 1);
+    const done = (o) => LauncherIdb.done(JSON.stringify(o));
+    const req = (r) => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+    const count = (o) => (o && typeof o === 'object' ? Object.keys(o).length : 0);
+    const stats = (s) => s && {
+      characters: count(s.characters),
+      groups: count(s.groups),
+      chats: count(s.chats),
+      personas: count(s.personas),
+      lorebooks: count(s.lorebooks),
+      keys: count(s.api && s.api.keys),
+    };
+    try {
+      const open = indexedDB.open('keyval-store');
+      open.onupgradeneeded = () => open.result.createObjectStore('keyval');
+      const db = await req(open);
+      const store = (mode) => db.transaction('keyval', mode).objectStore('keyval');
+      const read = () => req(store('readonly').get('divinax'));
+      const op = q.get('op');
+
+      if (op === 'stats') {
+        const v = await read();
+        return done({ ok: true, stats: stats(v && v.state) });
+      }
+
+      if (op === 'export') {
+        const v = await read();
+        if (!v || !v.state) return done({ ok: true, empty: true });
+        const copy = JSON.parse(JSON.stringify(v));
+        if (q.get('keys') !== '1' && copy.state.api) {
+          copy.state.api.keys = {};
+          if (Array.isArray(copy.state.api.proxies)) copy.state.api.proxies = copy.state.api.proxies.map((p) => ({ ...p, password: '' }));
+        }
+        const body = JSON.stringify(copy);
+        const r = await fetch(base + 'data', { method: 'POST', body });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return done({ ok: true, bytes: body.length, stats: stats(copy.state) });
+      }
+
+      if (op === 'import') {
+        const r = await fetch(base + 'data', { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const j = await r.json();
+        const cur = await read();
+        let value;
+        if (j && j.state && typeof j.state === 'object') {
+          // бэкап лаунчера: состояние целиком
+          value = { state: j.state, version: typeof j.version === 'number' ? j.version : 2 };
+        } else if (j && j.divinax === 1) {
+          // «Резервная копия» из самого фронта (вкладка «Интерфейс»)
+          const state = { ...((cur && cur.state) || {}) };
+          for (const [k, val] of Object.entries(j)) if (!['divinax', 'kind', 'date'].includes(k)) state[k] = val;
+          value = { state, version: (cur && cur.version) || 2 };
+        } else {
+          throw new Error('Это не бэкап Divinax');
+        }
+        // в бэкапе без ключей API оставляем свои
+        const curKeys = cur && cur.state && cur.state.api && cur.state.api.keys;
+        if (value.state.api && count(value.state.api.keys) === 0 && count(curKeys) > 0) value.state.api = { ...value.state.api, keys: curKeys };
+        await req(store('readwrite').put(value, 'divinax'));
+        return done({ ok: true, stats: stats(value.state) });
+      }
+
+      if (op === 'reset') {
+        await req(store('readwrite').clear());
+        try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+        return done({ ok: true });
+      }
+
+      throw new Error('Неизвестная операция ' + op);
+    } catch (e) {
+      done({ ok: false, error: String((e && e.message) || e) });
+    }
+  })();
+</script>

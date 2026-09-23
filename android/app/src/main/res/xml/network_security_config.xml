@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Фронт отдаётся по http://127.0.0.1, а локальные модели (KoboldCpp, Ollama…) часто живут в LAN без https -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
