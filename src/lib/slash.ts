@@ -166,6 +166,17 @@ function hideRange(arg: string, hidden: boolean) {
   });
 }
 
+/** Регистрация команды сторонним расширением: заменяет команды с теми же именами. */
+export function registerCommand(names: string[], help: string, run: Cmd['run']) {
+  const lower = names.map((n) => n.toLowerCase().replace(/^\//, '')).filter(Boolean);
+  if (!lower.length) return;
+  for (let i = COMMANDS.length - 1; i >= 0; i--) if (COMMANDS[i].names.some((n) => lower.includes(n))) COMMANDS.splice(i, 1);
+  COMMANDS.push({ names: lower, help, run });
+}
+
+/** Последний результат конвейера | (для executeSlashCommands). */
+export const lastPipe = () => pipe.value;
+
 export async function runSlash(input: string): Promise<boolean> {
   const text = input.trim();
   if (!text.startsWith('/')) return false;

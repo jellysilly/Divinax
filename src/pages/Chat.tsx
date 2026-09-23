@@ -58,6 +58,7 @@ import { CHAT_FILE_ACCEPT, exportChat, importChatFiles } from '../lib/chatio';
 import { runGeneration, sendMessage, stopGeneration, summarizeChat } from '../lib/generate';
 import { runSlash } from '../lib/slash';
 import { bookSources } from '../lib/books';
+import { WandExtensionsSlot } from '../components/UserExtensions';
 import { speak, startRecognition } from '../lib/speech';
 import { fmtDay, fmtDayTitle, pickFiles, plural, readDataUrl, shrinkImage, uid } from '../lib/util';
 import { generateImage } from '../lib/images';
@@ -850,6 +851,7 @@ function WandMenu({
       <MenuItem icon={<BookMarked size={17} />} onClick={go(() => openModal('help'))}>
         {tr('Команды и макросы')}
       </MenuItem>
+      <WandExtensionsSlot />
     </PopMenu>
   );
 }

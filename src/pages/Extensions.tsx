@@ -4,21 +4,20 @@ import {
   AlignLeft,
   Captions,
   Database,
-  Download,
   Globe,
   Image as ImageIcon,
   Languages,
   LayoutGrid,
   Mic,
   Regex,
-  RefreshCw,
   Settings,
   Smile,
   Volume2,
   Zap,
 } from 'lucide-react';
 import { openModal, setState, useStore } from '../store';
-import { Panel, Switch } from '../components/ui';
+import { Switch } from '../components/ui';
+import { UserExtensionsPanel } from '../components/UserExtensions';
 
 export interface ExtInfo {
   id: string;
@@ -48,19 +47,10 @@ export function ExtensionsPage() {
   const toggle = (id: string, v: boolean) => setState((s) => ({ ext: { ...s.ext, enabled: { ...s.ext.enabled, [id]: v } } }));
   return (
     <div className="col scroll" style={{ flex: 1, minHeight: 0, gap: 16, paddingTop: 2 }}>
-      <Panel star={false} style={{ flexDirection: 'row', alignItems: 'center', gap: 20, flexWrap: 'wrap', flex: 'none' }}>
-        <div className="col grow" style={{ gap: 6, minWidth: 260 }}>
-          <h2 className="h2">{tr('Расширения')}</h2>
-          <span className="sub">{tr('Включайте модули и настраивайте их здесь. Сторонние расширения ставятся по ссылке на репозиторий.')}</span>
-        </div>
-        <input className="input" style={{ maxWidth: 340 }} placeholder={tr('https://github.com/автор/расширение')} />
-        <button type="button" className="btn primary" onClick={() => openModal('info', tr('Установка сторонних расширений появится в следующей версии Divinax — сейчас доступны встроенные модули.'))}>
-          <Download size={15} /> {tr('Установить')}
-        </button>
-        <button type="button" className="btn" onClick={() => openModal('info', tr('Все встроенные расширения актуальны.'))}>
-          <RefreshCw size={15} /> {tr('Обновить все')}
-        </button>
-      </Panel>
+      <UserExtensionsPanel />
+      <h3 className="h3" style={{ flex: 'none' }}>
+        {tr('Встроенные модули')}
+      </h3>
       <div className="cards-grid">
         {EXTENSIONS.map((e) => (
           <div key={e.id} className="ext-card">

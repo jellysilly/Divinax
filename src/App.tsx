@@ -102,6 +102,8 @@ export default function App() {
     if (!hydrated) return;
     seedIfNeeded();
     if (useStore.getState().api.autoConnect) void connect(true);
+    // расширения, которые пользователь сам установил, — отдельным чанком, чтобы не тормозить запуск
+    void import('./lib/userext/loader').then((m) => m.loadUserExtensions());
   }, [hydrated]);
 
   // Перетаскивание карточек, лорбуков и чатов в окно

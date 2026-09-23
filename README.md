@@ -110,6 +110,23 @@ cd android && ./gradlew assembleRelease
 
 **Расширения** — суммаризация, регулярные выражения, быстрые ответы, озвучка и распознавание речи (Web Speech), перевод, эмоции-спрайты, генерация изображений (Pollinations), галерея.
 
+**Сторонние расширения** (вкладка «Расширения»)
+- установка по ссылке: `github.com/автор/репозиторий`, `автор/репозиторий`, ссылка на ветку или подпапку (`…/tree/ветка/папка`) или прямая ссылка на папку с `manifest.json`
+- формат — как у SillyTavern: `manifest.json` (`display_name`, `js`, `css`, `loading_order`) + ES-модуль; файлы берутся через jsDelivr, версия закрепляется по коммиту, «Обновить» проверяет новую
+- совместимость с API таверны: импорты `../../../extensions.js`, `../../../../script.js`, `popup.js`, `slash-commands/…`, `utils.js` подменяются; `SillyTavern.getContext()`, `extension_settings` + `saveSettingsDebounced`, `eventSource`/`event_types` (сообщения, генерация, смена чата, `APP_READY`, `CHAT_COMPLETION_PROMPT_READY`), `setExtensionPrompt`, `generateQuietPrompt`/`generateRaw`, slash-команды (`SlashCommandParser`, `registerSlashCommand`), `callGenericPopup`/`Popup`, `renderExtensionTemplateAsync`, `$.get` файлов расширения, `chat` + `saveChat`, `chat_metadata` + `saveMetadata`, `toastr`, jQuery и значки Font Awesome
+- настройки расширений (`#extensions_settings`) открываются кнопкой «Их настройки», пункты меню (`#extensionsMenu`) появляются в меню палочки
+- неподдерживаемые вызовы API не роняют расширение — они пропускаются с предупреждением в консоли; расширения, которые перестраивают интерфейс таверны, могут работать частично
+- ⚠ расширение — чужой код с полным доступом к Divinax, включая ключи API: ставьте только те, которым доверяете
+
+Минимальное расширение:
+
+```js
+// manifest.json: { "display_name": "Hello", "js": "index.js" }
+const { eventSource, event_types, SlashCommandParser, SlashCommand } = SillyTavern.getContext();
+eventSource.on(event_types.MESSAGE_RECEIVED, (i) => console.log('ответ №', i));
+SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'hello', callback: () => 'Привет!' }));
+```
+
 ## Локальные модели и CORS
 
 Браузер обращается к API напрямую, поэтому локальный сервер должен разрешать CORS:
@@ -125,6 +142,7 @@ cd android && ./gradlew assembleRelease
 ```
 src/
   lib/        логика: api, prompt, worldinfo, macros, cards, generate, slash, i18n…
+  lib/userext сторонние расширения: загрузчик и совместимость с API SillyTavern
   store/      состояние (Zustand + IndexedDB)
   components/ общие компоненты и модальные окна
   pages/      вкладки: Chat, Api, Generation, Format, Lorebook, Persona, Interface, Extensions, Characters

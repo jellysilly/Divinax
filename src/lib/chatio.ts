@@ -64,44 +64,45 @@ export function chatToJsonl(s: State, c: Chat): string {
       divinax: { name: c.name, summary: c.summary, lorebooks: c.lorebookIds.map((id) => s.lorebooks[id]?.name).filter(Boolean) },
     },
   };
-  const lines = [JSON.stringify(header)];
-  for (const m of c.messages) {
-    const ch = m.charId ? s.characters[m.charId] : undefined;
-    const iso = new Date(m.date).toISOString();
-    const extra: Record<string, unknown> = {};
-    if (m.isSystem) extra.type = 'narrator';
-    if (m.reasoning) extra.reasoning = m.reasoning;
-    if (m.translation) extra.display_text = m.translation;
-    if (m.genTime) extra.gen_time = m.genTime;
-    if (m.tokens) extra.token_count = m.tokens;
-    const model = m.swipeInfo[m.swipeId]?.model;
-    if (model) extra.model = model;
-    if (m.images?.length) {
-      extra.image = m.images[0];
-      extra.inline_image = true;
-    }
-    const line: Record<string, unknown> = {
-      name: m.name,
-      is_user: m.isUser,
-      // в ST is_system — «скрыто от ИИ», а системное сообщение помечается extra.type = narrator
-      is_system: m.hidden,
-      send_date: iso,
-      mes: m.text,
-      extra,
-    };
-    if (!m.isUser && !m.isSystem) {
-      line.swipes = m.swipes;
-      line.swipe_id = m.swipeId;
-      line.swipe_info = m.swipes.map((_, i) => {
-        const inf = m.swipeInfo[i];
-        const date = new Date(inf?.date ?? m.date).toISOString();
-        return { send_date: date, gen_started: date, gen_finished: date, extra: inf?.reasoning ? { reasoning: inf.reasoning } : {} };
-      });
-      if (c.ownerType === 'group' && ch) line.original_avatar = `${ch.name}.png`;
-    }
-    lines.push(JSON.stringify(line));
+  return [JSON.stringify(header), ...c.messages.map((m) => JSON.stringify(toStMessage(s, c, m)))].join('\n');
+}
+
+/** Сообщение в формате SillyTavern (строка JSONL и элемент context.chat для расширений). */
+export function toStMessage(s: State, c: Chat, m: Message): Record<string, unknown> {
+  const ch = m.charId ? s.characters[m.charId] : undefined;
+  const iso = new Date(m.date).toISOString();
+  const extra: Record<string, unknown> = {};
+  if (m.isSystem) extra.type = 'narrator';
+  if (m.reasoning) extra.reasoning = m.reasoning;
+  if (m.translation) extra.display_text = m.translation;
+  if (m.genTime) extra.gen_time = m.genTime;
+  if (m.tokens) extra.token_count = m.tokens;
+  const model = m.swipeInfo[m.swipeId]?.model;
+  if (model) extra.model = model;
+  if (m.images?.length) {
+    extra.image = m.images[0];
+    extra.inline_image = true;
   }
-  return lines.join('\n');
+  const line: Record<string, unknown> = {
+    name: m.name,
+    is_user: m.isUser,
+    // в ST is_system — «скрыто от ИИ», а системное сообщение помечается extra.type = narrator
+    is_system: m.hidden,
+    send_date: iso,
+    mes: m.text,
+    extra,
+  };
+  if (!m.isUser && !m.isSystem) {
+    line.swipes = m.swipes;
+    line.swipe_id = m.swipeId;
+    line.swipe_info = m.swipes.map((_, i) => {
+      const inf = m.swipeInfo[i];
+      const date = new Date(inf?.date ?? m.date).toISOString();
+      return { send_date: date, gen_started: date, gen_finished: date, extra: inf?.reasoning ? { reasoning: inf.reasoning } : {} };
+    });
+    if (c.ownerType === 'group' && ch) line.original_avatar = `${ch.name}.png`;
+  }
+  return line;
 }
 
 export function chatToText(c: Chat): string {

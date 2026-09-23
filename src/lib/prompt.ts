@@ -9,6 +9,7 @@ import { applyRegex, scriptsFor } from './regex';
 import { estimateTokens } from './util';
 import { scanWorldInfo, type WIResult } from './worldinfo';
 import { bookSources } from './books';
+import { EXT_PROMPT_TYPES, extPromptsAt } from './extprompts';
 
 export type GenKind = 'normal' | 'swipe' | 'regenerate' | 'continue' | 'impersonate' | 'quiet';
 
@@ -162,11 +163,15 @@ export function buildPrompt(s: State, o: BuildOptions): BuiltPrompt {
     : '';
   if (summary && s.ext.summarize.position === 'depth')
     inj.push({ depth: s.ext.summarize.depth, role: s.ext.summarize.role, content: summary, name: tr('Пересказ') });
+  // вставки сторонних расширений (setExtensionPrompt)
+  for (const p of extPromptsAt(EXT_PROMPT_TYPES.IN_CHAT)) inj.push({ depth: p.depth, role: p.role, content: sub(p.value), name: tr('Расширение') });
+  const extBefore = extPromptsAt(EXT_PROMPT_TYPES.BEFORE_PROMPT).map((p) => sub(p.value));
+  const extAfter = extPromptsAt(EXT_PROMPT_TYPES.IN_PROMPT).map((p) => sub(p.value));
 
   const personaInPrompt = persona?.description && persona.position === 'in_prompt' ? env.persona! : '';
   const examples = parseExamples(env.mesExamples ?? '');
-  const wiBefore = sub(wi.before);
-  const wiAfter = sub(wi.after);
+  const wiBefore = [...extBefore, sub(wi.before)].filter(Boolean).join('\n');
+  const wiAfter = [sub(wi.after), ...extAfter].filter(Boolean).join('\n');
 
   const budget = preset.unlockedContext ? 10_000_000 : Math.max(512, preset.maxContext - preset.maxTokens);
   const items: { name: string; tokens: number }[] = [];

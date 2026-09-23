@@ -9,6 +9,10 @@ import { applyRegex, scriptsFor } from './regex';
 import { estimateTokens } from './util';
 import { speak } from './speech';
 import { classifyEmotion, translateMessage, translateText } from './extras';
+import { eventSource, event_types, extActive } from './userext/events';
+
+/** Индекс сообщения в чате — так события ST ссылаются на сообщения. */
+const msgIndex = (chatId: string, id?: string) => (id ? (getState().chats[chatId]?.messages.findIndex((m) => m.id === id) ?? -1) : -1);
 
 let controller: AbortController | null = null;
 
@@ -101,6 +105,11 @@ export async function sendMessage(raw: string, opts: { generate?: boolean; asSys
     if (original) msg.translation = original;
     msg.tokens = estimateTokens(text);
     updateChat(chat.id, (c) => void c.messages.push(msg));
+    if (extActive()) {
+      const idx = msgIndex(chat.id, msg.id);
+      await eventSource.emit(event_types.MESSAGE_SENT, idx);
+      await eventSource.emit(event_types.USER_MESSAGE_RENDERED, idx);
+    }
   }
   if (opts.generate === false) return;
   if (chat.ownerType === 'group') {
@@ -202,6 +211,12 @@ export async function runGeneration(
   controller = new AbortController();
   setState({ gen: { chatId, kind, messageId, charId: char?.id, startedAt }, streaming: null });
 
+  if (extActive()) {
+    await eventSource.emit(event_types.GENERATION_STARTED, kind === 'normal' ? 'normal' : kind, {}, kind === 'quiet');
+    // расширения могут поправить промпт (как CHAT_COMPLETION_PROMPT_READY в ST)
+    if (built.messages) await eventSource.emit(event_types.CHAT_COMPLETION_PROMPT_READY, { chat: built.messages, dryRun: false });
+  }
+
   const stream = preset.stream && s0.api.main !== 'horde' && s0.api.main !== 'kobold' && s0.api.main !== 'novel';
   try {
     const res = await generate(s0.api, {
@@ -262,10 +277,18 @@ export async function runGeneration(
       void translateMessage(chatId, messageId!);
     if (st.ext.enabled.tts && st.ext.tts.auto) speak(finalText);
     void maybeAutoSummarize(chatId);
+    if (extActive()) {
+      const idx = msgIndex(chatId, messageId);
+      if (kind === 'swipe') await eventSource.emit(event_types.MESSAGE_SWIPED, idx);
+      await eventSource.emit(event_types.MESSAGE_RECEIVED, idx, kind);
+      await eventSource.emit(event_types.CHARACTER_MESSAGE_RENDERED, idx, kind);
+      await eventSource.emit(event_types.GENERATION_ENDED, idx);
+    }
     return true;
   } catch (e) {
     const err = e as Error;
     if (err.name === 'AbortError') {
+      if (extActive()) void eventSource.emit(event_types.GENERATION_STOPPED);
       // сохраняем то, что успело прийти
       const partial = getState().streaming;
       if (partial && partial.messageId === messageId && partial.text.trim()) {

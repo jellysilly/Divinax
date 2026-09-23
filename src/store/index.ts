@@ -3,6 +3,8 @@ import { create } from 'zustand';
 import { persist, type PersistStorage, type StorageValue } from 'zustand/middleware';
 import { get as idbGet, set as idbSet, del as idbDel } from 'idb-keyval';
 import type {
+  ExtRuntimeStatus,
+  UserExtension,
   ApiSettings,
   Character,
   Chat,
@@ -77,6 +79,8 @@ export interface PersistedState {
   defaultPersonaId: string;
   charPersona: Record<string, string>;
   seeded: boolean;
+  userExts: UserExtension[];
+  userExtSettings: Record<string, unknown>; // extension_settings сторонних расширений
 }
 
 export interface TransientState {
@@ -96,6 +100,7 @@ export interface TransientState {
   draft: string;
   selecting: string[] | null; // режим выбора сообщений для удаления
   editingMessageId: string;
+  extStatus: Record<string, ExtRuntimeStatus>;
 }
 
 export type State = PersistedState & TransientState;
@@ -123,6 +128,8 @@ const initialPersisted: PersistedState = {
   defaultPersonaId: '',
   charPersona: {},
   seeded: false,
+  userExts: [],
+  userExtSettings: {},
 };
 
 const initialTransient: TransientState = {
@@ -142,6 +149,7 @@ const initialTransient: TransientState = {
   draft: '',
   selecting: null,
   editingMessageId: '',
+  extStatus: {},
 };
 
 // IndexedDB с отложенной записью: стриминг и ввод не долбят базу на каждый символ.

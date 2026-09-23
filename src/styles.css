@@ -860,3 +860,33 @@ select option { background: #0c0c10; color: var(--text); }
   .book-row { flex-wrap: wrap; }
   .book-toggles { order: 5; width: 100%; justify-content: flex-start; }
 }
+
+/* ── Сторонние расширения ── */
+.dx-warn { display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border: 1px solid rgba(230, 180, 90, 0.45); border-radius: 12px; background: rgba(230, 180, 90, 0.08); color: var(--text); font-size: 14px; line-height: 1.45; flex: none; }
+.dx-warn > svg { color: #e6b45a; margin-top: 2px; }
+.dx-ext-status.ok { color: #7fc98f; }
+.dx-ext-status.err { color: #e87c7c; }
+.dx-ext-status.warn { color: #e6b45a; }
+/* пустой слот не прячем: DomSlot проверяет видимость при монтировании; прячем, когда внутри пустой контейнер */
+.dx-ext-menu:has(> #extensionsMenu:empty) { display: none; }
+.dx-ext-menu { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 4px; }
+.dx-ext-menu .list-group-item, .dx-ext-menu #extensionsMenu > div { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; cursor: pointer; color: var(--text); font-size: 14.5px; }
+.dx-ext-menu .list-group-item:hover, .dx-ext-menu #extensionsMenu > div:hover { background: rgba(255, 255, 255, 0.06); }
+
+/* базовые классы SillyTavern для настроек расширений */
+.dx-ext-settings { display: flex; flex-direction: column; gap: 10px; font-size: 14.5px; }
+.dx-ext-settings #extensions_settings, .dx-ext-settings #extensions_settings2 { display: flex; flex-direction: column; gap: 10px; }
+.dx-ext-settings .inline-drawer { border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, 0.02); }
+.dx-ext-settings .inline-drawer-toggle, .dx-ext-settings .inline-drawer-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; cursor: pointer; color: var(--strong); font-weight: 600; }
+.dx-ext-settings .inline-drawer-content { display: none; padding: 4px 14px 14px; }
+.dx-ext-settings .inline-drawer-content.dx-open { display: block; }
+.dx-ext-settings .menu_button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; padding: 0 14px; border: 1px solid var(--line-strong); border-radius: 999px; background: rgba(255, 255, 255, 0.04); color: var(--text); cursor: pointer; width: fit-content; }
+.dx-ext-settings .menu_button:hover { background: rgba(255, 255, 255, 0.1); }
+.dx-ext-settings .text_pole, .dx-ext-settings input[type='text'], .dx-ext-settings input[type='number'], .dx-ext-settings textarea, .dx-ext-settings select { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--input); color: var(--text); font: inherit; }
+.dx-ext-settings .checkbox_label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.dx-ext-settings .flex-container { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.dx-ext-settings .flexGap5 { gap: 5px; }
+.dx-ext-settings .wide100p { width: 100%; }
+.dx-ext-settings hr, .dx-ext-settings .sysHR { border: 0; border-top: 1px solid var(--line); margin: 8px 0; }
+.dx-ext-settings small, .dx-ext-settings .notes-link { color: var(--muted); }
+.dx-ext-settings label { display: block; margin: 6px 0 4px; }

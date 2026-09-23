@@ -119,6 +119,7 @@ export interface Chat {
   summary?: string;
   branchOf?: { chatId: string; messageId: string };
   vars: Record<string, string>; // переменные макросов {{getvar}}
+  stMeta?: Record<string, unknown>; // chat_metadata для сторонних расширений
   createdAt: number;
   updatedAt: number;
 }
@@ -462,3 +463,29 @@ export interface Toast {
   kind: 'info' | 'error' | 'success';
   text: string;
 }
+
+// ── Сторонние расширения ──
+
+export interface ExtManifest {
+  display_name: string;
+  js?: string;
+  css?: string;
+  author?: string;
+  version?: string;
+  homePage?: string;
+  loading_order?: number;
+}
+
+export interface UserExtension {
+  id: string;
+  folder: string; // имя папки, как в SillyTavern (scripts/extensions/third-party/<folder>)
+  source: string; // что ввёл пользователь
+  base: string; // откуда грузим файлы (со слэшем в конце)
+  github?: { owner: string; repo: string; ref: string; path: string; sha?: string };
+  manifest: ExtManifest;
+  enabled: boolean;
+  installedAt: number;
+  updatedAt: number;
+}
+
+export type ExtRuntimeStatus = { state: 'loading' | 'ok' | 'error' | 'reload'; error?: string };
