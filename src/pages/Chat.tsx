@@ -53,7 +53,8 @@ import type { Chat } from '../types';
 import { Library } from '../components/Library';
 import { MessageItem } from '../components/MessageItem';
 import { Avatar, IconBtn, LazyTextarea, NumInput, Panel, Select, Star, Switch } from '../components/ui';
-import { closeChat, exportChat, importChatText, openChat, openOwner, startNewChat } from '../lib/chats';
+import { closeChat, openChat, openOwner, startNewChat } from '../lib/chats';
+import { CHAT_FILE_ACCEPT, exportChat, importChatFiles } from '../lib/chatio';
 import { runGeneration, sendMessage, stopGeneration, summarizeChat } from '../lib/generate';
 import { runSlash } from '../lib/slash';
 import { bookSources } from '../lib/books';
@@ -198,11 +199,11 @@ function ChatsPanel({ chat }: { chat?: Chat }) {
         </button>
         <IconBtn
           icon={<Upload size={16} />}
-          label={tr('Импорт чата (JSONL)')}
+          label={tr('Импорт чатов (SillyTavern JSONL и др.)')}
           disabled={!chat}
           onClick={async () => {
-            const [f] = await pickFiles('.jsonl,.json');
-            if (f && chat) importChatText(await f.text(), chat.ownerType, chat.ownerId, f.name);
+            const files = await pickFiles(CHAT_FILE_ACCEPT, true);
+            if (files.length) await importChatFiles(files);
           }}
         />
         <IconBtn icon={<Download size={16} />} label={tr('Экспорт чата')} disabled={!chat} onClick={() => chat && exportChat(chat.id)} />
@@ -740,6 +741,16 @@ function ChatMenu({ chat }: { chat: Chat }) {
       </MenuItem>
       <MenuItem icon={<Download size={17} />} onClick={() => (close(), exportChat(chat.id))}>
         {tr('Экспорт чата')}
+      </MenuItem>
+      <MenuItem
+        icon={<Upload size={17} />}
+        onClick={async () => {
+          close();
+          const files = await pickFiles(CHAT_FILE_ACCEPT, true);
+          if (files.length) await importChatFiles(files);
+        }}
+      >
+        {tr('Импорт чата')}
       </MenuItem>
       <MenuItem icon={<X size={17} />} onClick={closeChat}>
         {tr('Закрыть чат')}

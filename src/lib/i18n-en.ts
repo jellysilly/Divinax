@@ -998,6 +998,15 @@ export const EN: Record<string, string> = {
   'Этот чат': 'This chat',
   'Открыть лорбук': 'Open lorebook',
   '«Везде» — во всех чатах. «Этот чат» — только здесь. «Персонаж» — во всех чатах с персонажем; первый такой лорбук считается основным и попадает в карточку при экспорте. Лорбук персоны включается на вкладке «Персона».': '“Everywhere” — in all chats. “This chat” — only here. “Character” — in every chat with the character; the first such lorebook is the primary one and is embedded in the card on export. The persona lorebook is set on the Persona tab.',
+  'Импорт чатов (SillyTavern JSONL и др.)': 'Import chats (SillyTavern JSONL and more)',
+  'Импорт чатов': 'Import chats',
+  'Импорт чата': 'Import chat',
+  'Браузер может спросить разрешение на скачивание нескольких файлов': 'The browser may ask permission to download multiple files',
+  'Экспорт всех ({0})': 'Export all ({0})',
+  'Экспорт — в формате SillyTavern (JSONL): файл открывается в таверне через «Импорт чата». Импорт понимает JSONL SillyTavern (в т.ч. групповые чаты), Oobabooga, Agnai, CAI Tools и RisuAI; можно выбрать несколько файлов. Чат попадает к персонажу с тем же именем, иначе — в текущий.': 'Export uses the SillyTavern format (JSONL): open the file in SillyTavern via “Import chat”. Import reads SillyTavern JSONL (group chats too), Oobabooga, Agnai, CAI Tools and RisuAI; you can pick several files. A chat goes to the character with the same name, otherwise to the current one.',
+  'не похоже на чат (JSONL SillyTavern, Oobabooga, Agnai, CAI Tools, RisuAI)': 'doesn\'t look like a chat (SillyTavern JSONL, Oobabooga, Agnai, CAI Tools, RisuAI)',
+  'персонаж «{0}» не найден — откройте чат персонажа и импортируйте ещё раз': 'character “{0}” not found — open a chat with the character and import again',
+  'Чат «{0}» импортирован: {1}': 'Chat “{0}” imported: {1}',
 };
 
 // Формы для plural(n, 'один', 'два', 'пять'): ключ — третья форма

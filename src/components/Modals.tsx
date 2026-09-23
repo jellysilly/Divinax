@@ -24,7 +24,8 @@ import { ActiveBooksModal } from './BooksModal';
 import { AVATAR_CROP, BANNER_CROP, cropImage, pickAndCrop } from './Cropper';
 import { MACRO_HELP } from '../lib/macros';
 import { COMMANDS } from '../lib/slash';
-import { deleteChat, exportChat, openChat, openOwner, renameChat, startNewChat } from '../lib/chats';
+import { deleteChat, openChat, openOwner, renameChat, startNewChat } from '../lib/chats';
+import { CHAT_FILE_ACCEPT, exportChat, importChatFiles } from '../lib/chatio';
 import { buildPrompt } from '../lib/prompt';
 import { characterFromJson, readPngTextChunks } from '../lib/cards';
 import { blankRegex, cardRegex, regexFromST, regexToST } from '../lib/regex';
@@ -158,6 +159,30 @@ function ChatsModal() {
         <button type="button" className="btn" onClick={() => (startNewChat(chat.ownerType, chat.ownerId), closeModal())}>
           <Plus size={15} /> {tr('Новый чат')}
         </button>
+      </div>
+      <div className="row wrap">
+        <button
+          type="button"
+          className="btn sm"
+          onClick={async () => {
+            const files = await pickFiles(CHAT_FILE_ACCEPT, true);
+            if (files.length && (await importChatFiles(files))) closeModal();
+          }}
+        >
+          <Upload size={14} /> {tr('Импорт чатов')}
+        </button>
+        <button
+          type="button"
+          className="btn sm"
+          disabled={!list.length}
+          title={tr('Браузер может спросить разрешение на скачивание нескольких файлов')}
+          onClick={() => list.forEach((c, i) => setTimeout(() => exportChat(c.id), i * 400))}
+        >
+          <Download size={14} /> {tr('Экспорт всех ({0})', list.length)}
+        </button>
+      </div>
+      <div className="sub">
+        {tr('Экспорт — в формате SillyTavern (JSONL): файл открывается в таверне через «Импорт чата». Импорт понимает JSONL SillyTavern (в т.ч. групповые чаты), Oobabooga, Agnai, CAI Tools и RisuAI; можно выбрать несколько файлов. Чат попадает к персонажу с тем же именем, иначе — в текущий.')}
       </div>
       <div className="col" style={{ gap: 8 }}>
         {filtered.map((c) => {

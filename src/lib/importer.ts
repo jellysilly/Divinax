@@ -1,8 +1,8 @@
 import { tr } from './i18n';
 // Универсальный импорт: карточки PNG/JSON, лорбуки, чаты JSONL.
-import { activeChat, getState, openModal, setState, toast, upsertCharacter, upsertLorebook } from '../store';
+import { openModal, setState, toast, upsertCharacter, upsertLorebook } from '../store';
 import { importCharacterFile } from './cards';
-import { importChatText } from './chats';
+import { importChatFiles, parseChatFile } from './chatio';
 import { entriesFromST } from './worldinfo';
 import { uid } from './util';
 
@@ -11,16 +11,20 @@ export async function importFiles(files: File[]) {
     try {
       const name = f.name.toLowerCase();
       if (name.endsWith('.jsonl')) {
-        const c = activeChat(getState());
-        if (!c) throw new Error(tr('Откройте чат персонажа, чтобы импортировать историю'));
-        importChatText(await f.text(), c.ownerType, c.ownerId, f.name);
-        toast(tr('Чат «{0}» импортирован', f.name), 'success');
+        await importChatFiles([f]);
         continue;
       }
       if (name.endsWith('.json')) {
-        const j = JSON.parse(await f.text());
+        const text = await f.text();
+        const j = JSON.parse(text);
         if (j.entries && !j.spec && !j.data && !j.first_mes) {
           importLorebookJson(j, f.name.replace(/\.json$/i, ''));
+          continue;
+        }
+        // чаты других фронтендов (Agnai, Oobabooga, CAI Tools, RisuAI)
+        const isCard = j.spec || j.first_mes !== undefined || (j.data && j.data.first_mes !== undefined);
+        if (!isCard && parseChatFile(text, f.name).length) {
+          await importChatFiles([f]);
           continue;
         }
       }
