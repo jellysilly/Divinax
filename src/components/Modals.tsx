@@ -34,7 +34,7 @@ import { voices } from '../lib/speech';
 import { LANGS, translateMessage } from '../lib/extras';
 import { EXPRESSIONS } from '../lib/defaults';
 import { EXTENSIONS } from '../pages/Extensions';
-import { PromptEditor } from '../pages/Generation';
+import { PromptEditorModal } from '../pages/Generation';
 import { exportCharacter } from '../pages/Characters';
 import { runGeneration, summarizeChat } from '../lib/generate';
 import { generateImage } from '../lib/images';
@@ -54,11 +54,7 @@ export function Modals() {
     case 'prompt':
       return <PromptModal />;
     case 'promptEdit':
-      return (
-        <Modal title={tr('Редактор промпта')} onClose={closeModal} wide>
-          <PromptEditor id={String(p)} onClose={closeModal} />
-        </Modal>
-      );
+      return <PromptEditorModal key={String(p)} id={String(p)} />;
     case 'lightbox':
       return (
         <div className="overlay lightbox" onClick={closeModal}>

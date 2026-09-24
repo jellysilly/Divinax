@@ -1,10 +1,10 @@
 import { tr } from '../lib/i18n';
 import { useState } from 'react';
-import { Download, GripVertical, Pencil, Plus, Regex, Save, Trash2, Upload } from 'lucide-react';
-import { activePreset, openModal, setState, toast, updatePreset, useStore } from '../store';
+import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Copy, Download, GripVertical, Pencil, Plus, Regex, RotateCcw, Save, Trash2, Upload } from 'lucide-react';
+import { activePreset, closeModal, openModal, setState, toast, updatePreset, useStore } from '../store';
 import type { GenPreset, PromptItem, RegexScript } from '../types';
 import { regexFromST } from '../lib/regex';
-import { Divider, Field, IconBtn, NumInput, Panel, Select, Slider, Switch } from '../components/ui';
+import { Divider, Field, IconBtn, LazyTextarea, Modal, NumInput, Panel, Select, Slider, Switch } from '../components/ui';
 import { DEFAULT_PRESET } from '../lib/defaults';
 import { download, estimateTokens, fmtNum, pickFiles, safeName, uid } from '../lib/util';
 import { contextSize } from '../lib/connection';
@@ -160,18 +160,12 @@ export function GenerationPage() {
 }
 
 function UtilityPrompt({ label, k }: { label: string; k: keyof GenPreset }) {
+  const presetId = useStore((s) => s.activePresetId);
   const value = useStore((s) => String(activePreset(s)[k] ?? ''));
-  const [v, setV] = useState(value);
   return (
     <Field label={label}>
-      <textarea
-        className="textarea scroll"
-        rows={2}
-        style={{ minHeight: 56 }}
-        value={v}
-        onChange={(e) => setV(e.target.value)}
-        onBlur={() => v !== value && set({ [k]: v } as Partial<GenPreset>)}
-      />
+      {/* key по пресету: при смене пресета поле не должно унести старый текст в новый */}
+      <LazyTextarea key={presetId} className="textarea scroll" rows={2} style={{ minHeight: 56 }} value={value} onCommit={(v) => set({ [k]: v } as Partial<GenPreset>)} />
     </Field>
   );
 }
@@ -249,7 +243,7 @@ function PromptManager() {
     >
       <div className="sub">
         {isChat
-          ? tr('Блоки отправляются модели сверху вниз. Перетаскивайте, чтобы менять порядок; маркеры заполняются автоматически.')
+          ? tr('Блоки отправляются модели сверху вниз. Нажмите на блок, чтобы изменить текст; порядок меняется перетаскиванием или кнопками «Выше/Ниже» в редакторе. Маркеры заполняются автоматически.')
           : tr('Сейчас выбран Text Completion — порядок задаёт шаблон контекста во вкладке «Формат». Здесь используются только тексты основного промпта и инструкций.')}
       </div>
       <div className="pm-table grow">
@@ -289,14 +283,14 @@ function PromptManager() {
               <span className="grip" title={tr('Перетащите')}>
                 <GripVertical size={16} />
               </span>
-              <span className="name" title={tr(p.name)}>
+              <button type="button" className="name" title={tr('Открыть «{0}»', tr(p.name))} onClick={() => openModal('promptEdit', p.id)}>
                 {tr(p.name)}
                 {p.position === 'absolute' && !p.marker && <span className="muted"> {tr('· глубина')} {p.depth}</span>}
-              </span>
+              </button>
               <span className="kind">{p.marker ? tr('маркер') : p.role === 'system' ? tr('система') : p.role === 'user' ? tr('пользователь') : tr('ассистент')}</span>
               <span className="toks">{tokensFor(p)}</span>
               <span className="edit-cell">
-                {!p.marker && <IconBtn size="sm" bare icon={<Pencil size={14} />} label={tr('Изменить')} onClick={() => openModal('promptEdit', p.id)} />}
+                <IconBtn size="sm" bare icon={<Pencil size={14} />} label={p.marker ? tr('Открыть') : tr('Изменить')} onClick={() => openModal('promptEdit', p.id)} />
               </span>
               <Switch checked={p.enabled} onChange={(v) => toggle(p.id, v)} />
             </div>
@@ -392,73 +386,199 @@ function presetFromST(j: any, fallback: string): GenPreset {
   };
 }
 
-export function PromptEditor({ id, onClose }: { id: string; onClose: () => void }) {
-  const p = useStore((s) => activePreset(s).prompts.find((x) => x.id === id));
+/** Что подставляется в маркеры — показываем в редакторе вместо текста. */
+const MARKER_INFO: Record<string, string> = {
+  chatHistory: 'История сообщений чата. Сюда же встают заметка автора и записи лорбука на глубине.',
+  charDescription: 'Описание персонажа из карточки (в группе — описания всех участников).',
+  charPersonality: 'Поле «Личность» из карточки персонажа.',
+  scenario: 'Поле «Сценарий» из карточки персонажа.',
+  personaDescription: 'Описание вашей персоны, если оно стоит «в промпте».',
+  dialogueExamples: 'Примеры диалогов из карточки персонажа.',
+  worldInfoBefore: 'Записи лорбука с позицией «до персонажа» и пересказ, если он стоит «до».',
+  worldInfoAfter: 'Записи лорбука с позицией «после персонажа» и пересказ, если он стоит «после».',
+};
+
+/** Встроенные промпты, которые может заменить карточка персонажа. */
+const CARD_OVERRIDE: Record<string, string> = {
+  main: 'Если в карточке персонажа заполнен «Системный промпт», он заменит этот текст (в карточке можно вставить исходный через {{original}}).',
+  jailbreak: 'Если в карточке заполнены «Инструкции после истории», они заменят этот текст ({{original}} — исходный).',
+};
+
+export function PromptEditorModal({ id: initialId }: { id: string }) {
+  const [id, setId] = useState(initialId);
+  const prompts = useStore((s) => activePreset(s).prompts);
+  const presetName = useStore((s) => activePreset(s).name);
+  const index = prompts.findIndex((x) => x.id === id);
+  const p = prompts[index];
   const [d, setD] = useState<PromptItem | undefined>(p);
   if (!p || !d) return null;
-  const save = () => {
-    updatePreset((x) => ({ ...x, prompts: x.prompts.map((y) => (y.id === id ? d : y)) }));
-    onClose();
+  const dirty = JSON.stringify(d) !== JSON.stringify(p);
+  const def = DEFAULT_PRESET.prompts.find((x) => x.id === p.id);
+  const canReset = Boolean(def && !p.marker && def.content !== d.content);
+
+  const save = () => updatePreset((x) => ({ ...x, prompts: x.prompts.map((y) => (y.id === id ? d : y)) }));
+  const close = () => {
+    if (dirty && !confirm(tr('Закрыть без сохранения изменений?'))) return;
+    closeModal();
   };
+  const go = (to: number) => {
+    const next = prompts[to];
+    if (!next) return;
+    if (dirty) save();
+    setId(next.id);
+    setD(next);
+  };
+  const moveTo = (to: number) => {
+    if (to < 0 || to >= prompts.length) return;
+    updatePreset((x) => {
+      const arr = [...x.prompts];
+      const [it] = arr.splice(index, 1);
+      arr.splice(to, 0, it);
+      return { ...x, prompts: arr };
+    });
+  };
+
   return (
-    <div className="col" style={{ gap: 14 }}>
-      <div className="grid2">
-        <Field label={tr('Название')}>
-          <input className="input" value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} />
-        </Field>
-        <Field label={tr('Роль')}>
-          <Select
-            value={d.role}
-            onChange={(v) => setD({ ...d, role: v })}
-            options={[
-              { value: 'system', label: tr('Система') },
-              { value: 'user', label: tr('Пользователь') },
-              { value: 'assistant', label: tr('Ассистент') },
-            ]}
-          />
-        </Field>
-        <Field label={tr('Позиция')}>
-          <Select
-            value={d.position}
-            onChange={(v) => setD({ ...d, position: v })}
-            options={[
-              { value: 'relative', label: tr('По порядку в списке') },
-              { value: 'absolute', label: tr('На глубине в истории') },
-            ]}
-          />
-        </Field>
-        {d.position === 'absolute' && (
-          <Field label={tr('Глубина')}>
-            <NumInput value={d.depth} min={0} max={999} onChange={(v) => setD({ ...d, depth: v })} />
-          </Field>
-        )}
-      </div>
-      <Field label={tr('Текст промпта')} hint={tr('Поддерживаются макросы {{char}}, {{user}}, {{random::…}} и др.')}>
-        <textarea className="textarea scroll" rows={12} value={d.content} onChange={(e) => setD({ ...d, content: e.target.value })} />
-      </Field>
-      <div className="modal-foot">
-        {!p.system && (
+    <Modal
+      title={
+        <div className="col" style={{ gap: 2, minWidth: 0 }}>
+          <h2 className="h2 ellipsis">{tr(d.name) || tr('Промпт')}</h2>
+          <span className="sub">
+            {tr('Пресет «{0}» · блок {1} из {2}', tr(presetName), index + 1, prompts.length)}
+          </span>
+        </div>
+      }
+      onClose={close}
+      wide
+      footer={
+        <>
+          {!p.system && (
+            <button
+              type="button"
+              className="btn danger"
+              onClick={() => {
+                if (!confirm(tr('Удалить промпт «{0}»?', tr(p.name)))) return;
+                updatePreset((x) => ({ ...x, prompts: x.prompts.filter((y) => y.id !== id) }));
+                closeModal();
+              }}
+            >
+              <Trash2 size={15} /> {tr('Удалить')}
+            </button>
+          )}
+          <span className="spacer" />
+          {!p.marker && <span className="sub">{fmtNum(estimateTokens(d.content))} {tr('токенов')}</span>}
+          <button type="button" className="btn" onClick={close}>
+            {dirty ? tr('Отмена') : tr('Закрыть')}
+          </button>
           <button
             type="button"
-            className="btn danger"
+            className="btn primary"
+            disabled={!dirty}
             onClick={() => {
-              updatePreset((x) => ({ ...x, prompts: x.prompts.filter((y) => y.id !== id) }));
-              onClose();
+              save();
+              closeModal();
             }}
           >
-            <Trash2 size={15} /> {tr('Удалить')}
+            {tr('Сохранить')}
+          </button>
+        </>
+      }
+    >
+      <div className="row wrap" style={{ gap: 8 }}>
+        <IconBtn size="sm" icon={<ChevronLeft size={15} />} label={tr('Предыдущий блок')} disabled={index <= 0} onClick={() => go(index - 1)} />
+        <IconBtn size="sm" icon={<ChevronRight size={15} />} label={tr('Следующий блок')} disabled={index >= prompts.length - 1} onClick={() => go(index + 1)} />
+        <span className="spacer" />
+        <button type="button" className="btn sm" disabled={index <= 0} onClick={() => moveTo(index - 1)}>
+          <ArrowUp size={14} /> {tr('Выше')}
+        </button>
+        <button type="button" className="btn sm" disabled={index >= prompts.length - 1} onClick={() => moveTo(index + 1)}>
+          <ArrowDown size={14} /> {tr('Ниже')}
+        </button>
+        {!p.marker && (
+          <button
+            type="button"
+            className="btn sm"
+            onClick={() => {
+              const copy: PromptItem = { ...d, id: uid(), name: d.name + tr(' (копия)'), system: false };
+              updatePreset((x) => {
+                const arr = [...x.prompts];
+                arr.splice(index + 1, 0, copy);
+                return { ...x, prompts: arr };
+              });
+              if (dirty) save();
+              setId(copy.id);
+              setD(copy);
+            }}
+          >
+            <Copy size={14} /> {tr('Копия')}
           </button>
         )}
-        <span className="spacer" />
-        <span className="sub">{fmtNum(estimateTokens(d.content))} {tr('токенов')}</span>
-        <button type="button" className="btn" onClick={onClose}>
-          {tr('Отмена')}
-        </button>
-        <button type="button" className="btn primary" onClick={save}>
-          {tr('Сохранить')}
-        </button>
       </div>
-    </div>
+      <Switch label={tr('Включён')} checked={d.enabled} onChange={(v) => setD({ ...d, enabled: v })} />
+      {p.marker ? (
+        <div className="dx-note">
+          <b>{tr('Маркер')}</b> — {tr(MARKER_INFO[p.id] ?? 'Содержимое подставляется автоматически.')} {tr('Текст маркера редактируется в своём месте (карточка, персона, лорбук); здесь меняются порядок и включение.')}
+        </div>
+      ) : (
+        <>
+          <div className="grid2">
+            <Field label={tr('Название')}>
+              {/* встроенные названия хранятся ключами перевода — показываем на языке интерфейса */}
+              <input className="input" value={tr(d.name)} onChange={(e) => setD({ ...d, name: e.target.value })} />
+            </Field>
+            <Field label={tr('Роль')}>
+              <Select
+                value={d.role}
+                onChange={(v) => setD({ ...d, role: v })}
+                options={[
+                  { value: 'system', label: tr('Система') },
+                  { value: 'user', label: tr('Пользователь') },
+                  { value: 'assistant', label: tr('Ассистент') },
+                ]}
+              />
+            </Field>
+            <Field label={tr('Позиция')}>
+              <Select
+                value={d.position}
+                onChange={(v) => setD({ ...d, position: v })}
+                options={[
+                  { value: 'relative', label: tr('По порядку в списке') },
+                  { value: 'absolute', label: tr('На глубине в истории') },
+                ]}
+              />
+            </Field>
+            {d.position === 'absolute' && (
+              <Field label={tr('Глубина')} hint={tr('0 — после последнего сообщения, 1 — перед ним и т.д.')}>
+                <NumInput value={d.depth} min={0} max={999} onChange={(v) => setD({ ...d, depth: v })} />
+              </Field>
+            )}
+          </div>
+          {CARD_OVERRIDE[p.id] && <div className="dx-note">{tr(CARD_OVERRIDE[p.id])}</div>}
+          <Field
+            label={tr('Текст промпта')}
+            hint={tr('Макросы: {{char}}, {{user}}, {{persona}}, {{description}}, {{scenario}}, {{random::а::б}}, {{roll:d20}}, {{getvar::имя}}, {{time}} — полный список в «Справке».')}
+          >
+            <textarea
+              className="textarea scroll prompt-text"
+              rows={14}
+              value={d.content}
+              onChange={(e) => setD({ ...d, content: e.target.value })}
+              onKeyDown={(e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                  e.preventDefault();
+                  save();
+                }
+              }}
+            />
+          </Field>
+          {canReset && (
+            <button type="button" className="btn sm" style={{ alignSelf: 'flex-start' }} onClick={() => def && setD({ ...d, content: def.content })}>
+              <RotateCcw size={14} /> {tr('Вернуть стандартный текст')}
+            </button>
+          )}
+        </>
+      )}
+    </Modal>
   );
 }
 

@@ -188,7 +188,8 @@ export function buildPrompt(s: State, o: BuildOptions): BuiltPrompt {
     const after: ChatMsg[] = [];
     let historySlot = -1;
     const absolute: Injection[] = [];
-    const sysOverride = s.format.sysPromptEnabled ? s.sysPrompts.find((p) => p.id === s.format.sysPromptId)?.content ?? '' : '';
+    // как в SillyTavern: в Chat Completion основной промпт берётся из пресета,
+    // системный промпт со вкладки «Формат» — только для Text Completion (и Instruct в Chat Completion)
 
     for (const p of preset.prompts) {
       if (!p.enabled) continue;
@@ -203,7 +204,7 @@ export function buildPrompt(s: State, o: BuildOptions): BuiltPrompt {
       let content = '';
       switch (p.id) {
         case 'main': {
-          const original = sub(sysOverride || p.content);
+          const original = sub(p.content);
           content = char?.system_prompt?.trim() ? substituteMacros(char.system_prompt, { ...env, original }) : original;
           break;
         }

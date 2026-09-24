@@ -192,7 +192,7 @@ export function FormatPage() {
           </Field>
           <LazyTextarea className="textarea serif" rows={7} value={sys.content} onCommit={(v) => setSys({ content: v })} />
           <div className="sub" style={{ marginTop: -8 }}>
-            {tr('В Chat Completion заменяет «Основной промпт» менеджера промптов, если включён.')}
+            {tr('Работает в Text Completion. В Chat Completion основной промпт задаётся в пресете: «Генерация» → «Менеджер промптов».')}
           </div>
           <Divider />
           <Field label={tr('Токенизатор')}>

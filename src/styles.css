@@ -608,7 +608,8 @@ select option { background: #0c0c10; color: var(--text); }
 .pm-row.off { opacity: 0.5; }
 .pm-row.drag-over { border-top: 1px solid var(--strong); }
 .pm-row .grip { color: var(--muted); cursor: grab; display: flex; }
-.pm-row .name { font-size: 14.5px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-row .name { font-size: 14.5px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: none; border: 0; padding: 10px 0; text-align: left; cursor: pointer; font-family: inherit; min-width: 0; }
+.pm-row .name:hover { color: var(--strong); text-decoration: underline; text-underline-offset: 3px; }
 .pm-row .toks { text-align: right; font-size: 13px; color: var(--soft); font-variant-numeric: tabular-nums; }
 .kind { font-size: 11.5px; color: var(--soft); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; justify-self: start; }
 
@@ -830,8 +831,9 @@ select option { background: #0c0c10; color: var(--text); }
   .composer-box { min-height: 52px; padding-left: 12px; }
   .menu-btn { width: 52px; height: 52px; }
   .grid2, .grid3 { grid-template-columns: 1fr; }
-  .pm-row { grid-template-columns: 24px 1fr 60px 46px; }
-  .pm-row .kind, .pm-row .edit-cell { display: none; }
+  /* карандаш на телефоне остаётся: иначе промпт не открыть */
+  .pm-row { grid-template-columns: 22px 1fr 44px 30px 46px; gap: 6px; }
+  .pm-row .kind, .pm-row .kind-h { display: none; }
   .entry-grid { grid-template-columns: 1fr 1fr; }
   .toasts { left: 16px; right: 16px; top: 16px; max-width: none; }
   .char-hero { flex-direction: column; align-items: center; gap: 14px; }
@@ -890,3 +892,8 @@ select option { background: #0c0c10; color: var(--text); }
 .dx-ext-settings hr, .dx-ext-settings .sysHR { border: 0; border-top: 1px solid var(--line); margin: 8px 0; }
 .dx-ext-settings small, .dx-ext-settings .notes-link { color: var(--muted); }
 .dx-ext-settings label { display: block; margin: 6px 0 4px; }
+
+.dx-note { padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, 0.03); color: var(--soft); font-size: 14px; line-height: 1.5; }
+.dx-note b { color: var(--strong); }
+.prompt-text { min-height: 260px; font-size: 15px; line-height: 1.5; }
+@media (max-width: 760px) { .prompt-text { min-height: 200px; } }
