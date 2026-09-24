@@ -1088,6 +1088,7 @@ export const EN: Record<string, string> = {
   'Жесты смахивания': 'Swipe gestures',
   'на телефоне: ответ влево — следующий вариант или новый, вправо — предыдущий': 'on touch screens: swipe a reply left for the next or a new variant, right for the previous one',
   'Вариант {0} из {1}': 'Variant {0} of {1}',
+  'новый': 'new',
 };
 
 // Формы для plural(n, 'один', 'два', 'пять'): ключ — третья форма

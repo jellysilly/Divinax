@@ -7,12 +7,14 @@ export interface SwipeOptions {
   /** Можно ли уйти в эту сторону: -1 — предыдущий вариант, 1 — следующий/новый. */
   canGo: (dir: -1 | 1) => boolean;
   /** Подпись подсказки во время жеста. */
-  label: (dir: -1 | 1) => string;
+  /** Что покажет значок: новый вариант, следующий или предыдущий, и короткая подпись («3/3», «новый»). */
+  hint: (dir: -1 | 1) => { kind: 'new' | 'next' | 'prev'; text: string };
   onSwipe: (dir: -1 | 1) => void;
 }
 
 const LOCK = 12; // px до решения, горизонтальный это жест или прокрутка
-const MAX_SHIFT = 96; // насколько сообщение уезжает за пальцем
+const MAX_SHIFT = 76; // насколько сообщение уезжает за пальцем
+const BADGE = 46; // ширина значка: он показывается только в освободившемся месте, не поверх текста
 
 /** Внутри горизонтально прокручиваемого блока (таблица, код) жест не начинаем. */
 function inHorizontalScroller(el: Element | null, stop: Element): boolean {
@@ -43,13 +45,18 @@ export function useSwipeGesture(root: RefObject<HTMLElement | null>, hint: RefOb
       // сдвигаем всё сообщение (аватар и текст), кроме подсказки
       for (const c of moving()) c.style.transform = shift ? `translateX(${shift}px)` : '';
       if (h) {
-        h.style.opacity = dir ? (ready ? '1' : '0.55') : '0';
+        // значок проявляется, когда под него открылось место (с запасом на отступ сообщения)
+        const room = Math.min(1, Math.max(0, (Math.abs(shift) + 12 - BADGE) / 16));
+        h.style.opacity = dir ? String(room * (ready ? 1 : 0.6)) : '0';
         h.classList.toggle('ready', ready);
-        // при скрытии подсказка гаснет на месте: сторону и текст меняем только пока жест идёт
+        // при скрытии подсказка гаснет на месте: сторону и вид меняем только пока жест идёт
         if (dir) {
           // сообщение уезжает от подсказки: влево (следующий) — подсказка справа
           h.classList.toggle('right', dir === 1);
-          h.textContent = o.current.label(dir);
+          const { kind, text } = o.current.hint(dir);
+          h.dataset.kind = kind;
+          const lbl = h.querySelector('small');
+          if (lbl) lbl.textContent = text;
         }
       }
     };
@@ -104,7 +111,7 @@ export function useSwipeGesture(root: RefObject<HTMLElement | null>, hint: RefOb
       const dir: -1 | 1 = dx < 0 ? 1 : -1;
       const can = o.current.canGo(dir);
       // куда нельзя — лишь слегка тянется, чтобы было понятно, что жест распознан
-      const shift = can ? Math.max(-MAX_SHIFT, Math.min(MAX_SHIFT, dx * 0.5)) : dx * 0.12;
+      const shift = can ? Math.max(-MAX_SHIFT, Math.min(MAX_SHIFT, dx * 0.6)) : dx * 0.12;
       setVisual(shift, can ? dir : 0, can && Math.abs(dx) >= threshold());
     };
 

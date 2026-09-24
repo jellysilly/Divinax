@@ -900,6 +900,9 @@ select option { background: #0c0c10; color: var(--text); }
 
 /* ── Жесты смахивания по ответу ── */
 .msg.gest { position: relative; touch-action: pan-y; overflow: hidden; }
-.swipe-hint { position: absolute; top: 50%; left: 10px; transform: translateY(-50%); max-width: 45%; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(var(--panel-rgb), 0.92); color: var(--soft); font-family: var(--sans); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; pointer-events: none; transition: opacity 0.12s, color 0.12s, border-color 0.12s; z-index: 2; }
-.swipe-hint.right { left: auto; right: 10px; }
+.swipe-hint { position: absolute; top: 50%; left: 6px; transform: translateY(-50%); width: 46px; padding: 6px 0 5px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; gap: 2px; border: 1px solid var(--line); border-radius: 14px; background: rgba(var(--panel-rgb), 0.92); color: var(--soft); font-family: var(--sans); opacity: 0; pointer-events: none; transition: opacity 0.12s, color 0.12s, border-color 0.12s; z-index: 2; }
+.swipe-hint small { font-size: 10.5px; line-height: 1; white-space: nowrap; max-width: 42px; overflow: hidden; text-overflow: ellipsis; }
+.swipe-hint svg { display: none; }
+.swipe-hint[data-kind='new'] .i-new, .swipe-hint[data-kind='next'] .i-next, .swipe-hint[data-kind='prev'] .i-prev { display: block; }
+.swipe-hint.right { left: auto; right: 6px; }
 .swipe-hint.ready { color: var(--strong); border-color: var(--line-strong); }

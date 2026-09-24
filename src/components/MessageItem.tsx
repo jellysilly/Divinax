@@ -5,6 +5,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  RefreshCw,
   Copy,
   Eye,
   EyeOff,
@@ -89,12 +90,12 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
   useSwipeGesture(articleRef, hintRef, {
     enabled: gestures,
     canGo: (dir) => (dir < 0 ? m.swipeId > 0 : m.swipeId < m.swipes.length - 1 || isLastChar),
-    label: (dir) =>
+    hint: (dir) =>
       dir < 0
-        ? tr('Вариант {0} из {1}', m.swipeId, m.swipes.length)
+        ? { kind: 'prev', text: `${m.swipeId}/${m.swipes.length}` }
         : m.swipeId >= m.swipes.length - 1
-          ? tr('Новый вариант')
-          : tr('Вариант {0} из {1}', m.swipeId + 2, m.swipes.length),
+          ? { kind: 'new', text: tr('новый') }
+          : { kind: 'next', text: `${m.swipeId + 2}/${m.swipes.length}` },
     onSwipe: (dir) => void swipe(chatId, m.id, dir),
   });
 
@@ -120,7 +121,14 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
       style={selecting ? { cursor: 'pointer' } : undefined}
       data-mid={m.id}
     >
-      {gestures && <div ref={hintRef} className="swipe-hint" aria-hidden="true" />}
+      {gestures && (
+        <div ref={hintRef} className="swipe-hint" aria-hidden="true">
+          <RefreshCw size={17} className="i-new" />
+          <ChevronRight size={18} className="i-next" />
+          <ChevronLeft size={18} className="i-prev" />
+          <small />
+        </div>
+      )}
       {!m.isSystem && <Avatar src={avatar} name={m.name} glow={!m.isUser} />}
       <div className="msg-body">
         <div className="msg-head">
