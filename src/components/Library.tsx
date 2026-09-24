@@ -100,7 +100,7 @@ export function Library({
           size="lg"
           icon={<Upload size={17} />}
           label={tr('Импорт карточки (PNG, JSON)')}
-          onClick={async () => importFiles(await pickFiles('.png,.json', true))}
+          onClick={async () => importFiles(await pickFiles('.png,.json,.jsonl,.zip', true))}
         />
         <IconBtn size="lg" icon={<Link size={17} />} label={tr('Импорт по ссылке')} onClick={() => openModal('importUrl')} />
         <IconBtn size="lg" icon={<UserPlus size={17} />} label={tr('Создать групповой чат')} onClick={() => openModal('group', { id: '' })} />

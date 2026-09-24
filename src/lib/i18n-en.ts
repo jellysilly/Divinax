@@ -1071,6 +1071,20 @@ export const EN: Record<string, string> = {
   'Если в карточке заполнены «Инструкции после истории», они заменят этот текст ({{original}} — исходный).': 'If the card has “Post-history instructions”, they replace this text ({{original}} — this one).',
   'Работает в Text Completion. В Chat Completion основной промпт задаётся в пресете: «Генерация» → «Менеджер промптов».': 'Used in Text Completion. In Chat Completion the main prompt comes from the preset: Generation → Prompt manager.',
   'Блоки отправляются модели сверху вниз. Нажмите на блок, чтобы изменить текст; порядок меняется перетаскиванием или кнопками «Выше/Ниже» в редакторе. Маркеры заполняются автоматически.': 'Blocks are sent to the model top to bottom. Tap a block to edit its text; change the order by dragging or with Up/Down in the editor. Markers are filled in automatically.',
+  'браузер не умеет распаковывать ZIP — обновите его': 'your browser can\'t unpack ZIP — please update it',
+  'это не ZIP-архив или он повреждён': 'not a ZIP archive, or it is damaged',
+  'архив защищён паролем — такие не поддерживаются': 'password-protected archives are not supported',
+  '«{0}»: неподдерживаемый способ сжатия': '“{0}”: unsupported compression method',
+  'не похоже на регекс': 'doesn\'t look like a regex',
+  'JSON из SillyTavern (один скрипт или массив) или ZIP-архив с ними — распаковывать не нужно': 'SillyTavern JSON (one script or an array) or a ZIP archive of them — no need to unpack',
+  'Импортировано регексов: {0}, пропущено повторов: {1}': 'Regexes imported: {0}, duplicates skipped: {1}',
+  'Импортировано регексов: {0}': 'Regexes imported: {0}',
+  'Импорт (JSON, ZIP)': 'Import (JSON, ZIP)',
+  'Скрипты этого списка одним JSON-файлом': 'Scripts from this list as one JSON file',
+  'Глобальные, регексы пресета и из карточки — в одном JSON (открывается в Divinax и SillyTavern)': 'Global, preset and card regexes in one JSON (opens in Divinax and SillyTavern)',
+  'В файле {0} {1}': '{0} {1} in the file',
+  'Все одним JSON': 'All as one JSON',
+  'архив пустой': 'the archive is empty',
 };
 
 // Формы для plural(n, 'один', 'два', 'пять'): ключ — третья форма
@@ -1081,4 +1095,5 @@ export const EN_PLURALS: Record<string, [string, string]> = {
   'токенов': ['token', 'tokens'],
   'лорбуков': ['lorebook', 'lorebooks'],
   'записей': ['entry', 'entries'],
+  'регексов': ['regex', 'regexes'],
 };

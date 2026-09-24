@@ -29,7 +29,8 @@ import { deleteChat, openChat, openOwner, renameChat, startNewChat } from '../li
 import { CHAT_FILE_ACCEPT, exportChat, importChatFiles } from '../lib/chatio';
 import { buildPrompt } from '../lib/prompt';
 import { characterFromJson, readPngTextChunks } from '../lib/cards';
-import { blankRegex, cardRegex, regexFromST, regexToST } from '../lib/regex';
+import { blankRegex, cardRegex, regexToST } from '../lib/regex';
+import { mergeRegex, readRegexFiles } from '../lib/regexio';
 import { voices } from '../lib/speech';
 import { LANGS, translateMessage } from '../lib/extras';
 import { EXPRESSIONS } from '../lib/defaults';
@@ -1033,20 +1034,44 @@ function RegexSettings({ initial }: { initial: RegexScope }) {
         <button
           type="button"
           className="btn sm"
+          title={tr('JSON из SillyTavern (один скрипт или массив) или ZIP-архив с ними — распаковывать не нужно')}
           onClick={async () => {
-            const files = await pickFiles('.json', true);
-            const added: RegexScript[] = [];
-            for (const f of files) {
-              const j = JSON.parse(await f.text());
-              (Array.isArray(j) ? j : [j]).forEach((x) => added.push(regexFromST(x)));
-            }
-            setList([...list, ...added]);
+            const files = await pickFiles('.json,.zip,application/json,application/zip', true);
+            if (!files.length) return;
+            const { scripts, errors } = await readRegexFiles(files);
+            errors.forEach((e) => toast(e, 'error'));
+            if (!scripts.length) return;
+            const r = mergeRegex(list, scripts);
+            setList(r.list);
+            toast(
+              r.skipped ? tr('Импортировано регексов: {0}, пропущено повторов: {1}', r.added, r.skipped) : tr('Импортировано регексов: {0}', r.added),
+              'success',
+            );
           }}
         >
-          <Upload size={14} /> {tr('Импорт (ST)')}
+          <Upload size={14} /> {tr('Импорт (JSON, ZIP)')}
         </button>
-        <button type="button" className="btn sm" onClick={() => download(scope === 'global' ? 'regex.json' : `regex-${safeName(preset.name)}.json`, JSON.stringify(list.map(regexToST), null, 2))}>
+        <button
+          type="button"
+          className="btn sm"
+          disabled={!list.length}
+          title={tr('Скрипты этого списка одним JSON-файлом')}
+          onClick={() => download(scope === 'global' ? 'regex.json' : `regex-${safeName(preset.name)}.json`, JSON.stringify(list.map(regexToST), null, 2))}
+        >
           <Download size={14} /> {tr('Экспорт')}
+        </button>
+        <button
+          type="button"
+          className="btn sm"
+          disabled={!globalList.length && !presetList.length && !fromCard.length}
+          title={tr('Глобальные, регексы пресета и из карточки — в одном JSON (открывается в Divinax и SillyTavern)')}
+          onClick={() => {
+            const all = [...globalList, ...presetList, ...fromCard];
+            download('regex-all.json', JSON.stringify(all.map(regexToST), null, 2));
+            toast(tr('В файле {0} {1}', all.length, plural(all.length, 'регекс', 'регекса', 'регексов')), 'success');
+          }}
+        >
+          <Download size={14} /> {tr('Все одним JSON')}
         </button>
       </div>
       {list.map((r) => (
