@@ -1085,6 +1085,9 @@ export const EN: Record<string, string> = {
   'В файле {0} {1}': '{0} {1} in the file',
   'Все одним JSON': 'All as one JSON',
   'архив пустой': 'the archive is empty',
+  'Жесты смахивания': 'Swipe gestures',
+  'на телефоне: ответ влево — следующий вариант или новый, вправо — предыдущий': 'on touch screens: swipe a reply left for the next or a new variant, right for the previous one',
+  'Вариант {0} из {1}': 'Variant {0} of {1}',
 };
 
 // Формы для plural(n, 'один', 'два', 'пять'): ключ — третья форма

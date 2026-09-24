@@ -394,6 +394,7 @@ export interface UiSettings {
   showTokens: boolean;
   showGenTime: boolean;
   swipeArrows: boolean;
+  gestures: boolean; // смахивание по ответу для вариантов/перегенерации
   autoscroll: boolean;
   enterSends: boolean;
   confirmDelete: boolean;

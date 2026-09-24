@@ -22,6 +22,7 @@ import { substituteMacros } from '../lib/macros';
 import { RichText } from './RichText';
 import { branchChat } from '../lib/chats';
 import { swipe } from '../lib/generate';
+import { useSwipeGesture } from './useSwipeGesture';
 import { speak } from '../lib/speech';
 import { estimateTokens, fmtTime } from '../lib/util';
 import { Avatar, IconBtn } from './ui';
@@ -81,6 +82,22 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
   const toggleSelect = () =>
     setState((s) => ({ selecting: s.selecting?.includes(m.id) ? s.selecting.filter((x) => x !== m.id) : [...(s.selecting ?? []), m.id] }));
 
+  // жест смахивания: влево — следующий/новый вариант, вправо — предыдущий
+  const articleRef = useRef<HTMLElement>(null);
+  const hintRef = useRef<HTMLDivElement>(null);
+  const gestures = ui.gestures && !m.isUser && !m.isSystem && !editing && !selecting && !streaming;
+  useSwipeGesture(articleRef, hintRef, {
+    enabled: gestures,
+    canGo: (dir) => (dir < 0 ? m.swipeId > 0 : m.swipeId < m.swipes.length - 1 || isLastChar),
+    label: (dir) =>
+      dir < 0
+        ? tr('Вариант {0} из {1}', m.swipeId, m.swipes.length)
+        : m.swipeId >= m.swipes.length - 1
+          ? tr('Новый вариант')
+          : tr('Вариант {0} из {1}', m.swipeId + 2, m.swipes.length),
+    onSwipe: (dir) => void swipe(chatId, m.id, dir),
+  });
+
   const del = () => {
     if (getState().ui.confirmDelete && !confirm(tr('Удалить сообщение?'))) return;
     updateChat(chatId, (c) => void (c.messages = c.messages.filter((x) => x.id !== m.id)));
@@ -96,7 +113,14 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
   ].join(' ');
 
   return (
-    <article className={cls} onClick={selecting ? toggleSelect : undefined} style={selecting ? { cursor: 'pointer' } : undefined} data-mid={m.id}>
+    <article
+      ref={articleRef}
+      className={cls + (gestures ? ' gest' : '')}
+      onClick={selecting ? toggleSelect : undefined}
+      style={selecting ? { cursor: 'pointer' } : undefined}
+      data-mid={m.id}
+    >
+      {gestures && <div ref={hintRef} className="swipe-hint" aria-hidden="true" />}
       {!m.isSystem && <Avatar src={avatar} name={m.name} glow={!m.isUser} />}
       <div className="msg-body">
         <div className="msg-head">

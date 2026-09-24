@@ -357,6 +357,7 @@ export const DEFAULT_UI: UiSettings = {
   showTokens: true,
   showGenTime: true,
   swipeArrows: true,
+  gestures: true,
   autoscroll: true,
   enterSends: true,
   confirmDelete: true,

@@ -897,3 +897,9 @@ select option { background: #0c0c10; color: var(--text); }
 .dx-note b { color: var(--strong); }
 .prompt-text { min-height: 260px; font-size: 15px; line-height: 1.5; }
 @media (max-width: 760px) { .prompt-text { min-height: 200px; } }
+
+/* ── Жесты смахивания по ответу ── */
+.msg.gest { position: relative; touch-action: pan-y; overflow: hidden; }
+.swipe-hint { position: absolute; top: 50%; left: 10px; transform: translateY(-50%); max-width: 45%; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: rgba(var(--panel-rgb), 0.92); color: var(--soft); font-family: var(--sans); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; pointer-events: none; transition: opacity 0.12s, color 0.12s, border-color 0.12s; z-index: 2; }
+.swipe-hint.right { left: auto; right: 10px; }
+.swipe-hint.ready { color: var(--strong); border-color: var(--line-strong); }

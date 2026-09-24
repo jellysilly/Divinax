@@ -137,6 +137,12 @@ export function InterfacePage() {
             <Switch label={tr('Счётчик токенов')} checked={ui.showTokens} onChange={(v) => setUi({ showTokens: v })} />
             <Switch label={tr('Время генерации')} checked={ui.showGenTime} onChange={(v) => setUi({ showGenTime: v })} />
             <Switch label={tr('Стрелки свайпов')} checked={ui.swipeArrows} onChange={(v) => setUi({ swipeArrows: v })} />
+            <Switch
+              label={tr('Жесты смахивания')}
+              hint={tr('на телефоне: ответ влево — следующий вариант или новый, вправо — предыдущий')}
+              checked={ui.gestures}
+              onChange={(v) => setUi({ gestures: v })}
+            />
             <Switch label={tr('Автопрокрутка чата')} checked={ui.autoscroll} onChange={(v) => setUi({ autoscroll: v })} />
             <Switch label={tr('Enter отправляет сообщение')} checked={ui.enterSends} onChange={(v) => setUi({ enterSends: v })} />
             <Switch label={tr('Подтверждать удаление')} checked={ui.confirmDelete} onChange={(v) => setUi({ confirmDelete: v })} />
