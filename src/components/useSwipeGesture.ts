@@ -44,10 +44,13 @@ export function useSwipeGesture(root: RefObject<HTMLElement | null>, hint: RefOb
       for (const c of moving()) c.style.transform = shift ? `translateX(${shift}px)` : '';
       if (h) {
         h.style.opacity = dir ? (ready ? '1' : '0.55') : '0';
-        // сообщение уезжает от подсказки: влево (следующий) — подсказка справа
-        h.classList.toggle('right', dir === 1);
         h.classList.toggle('ready', ready);
-        if (dir) h.textContent = o.current.label(dir);
+        // при скрытии подсказка гаснет на месте: сторону и текст меняем только пока жест идёт
+        if (dir) {
+          // сообщение уезжает от подсказки: влево (следующий) — подсказка справа
+          h.classList.toggle('right', dir === 1);
+          h.textContent = o.current.label(dir);
+        }
       }
     };
 
@@ -85,6 +88,12 @@ export function useSwipeGesture(root: RefObject<HTMLElement | null>, hint: RefOb
         }
         if (Math.abs(ddx) < LOCK || Math.abs(ddx) < Math.abs(ddy) * 1.3) return;
         locked = true;
+        // подсказка — на высоте пальца: в длинном ответе середина сообщения может быть за экраном
+        const h = hint.current;
+        if (h) {
+          const r = el.getBoundingClientRect();
+          h.style.top = `${Math.max(24, Math.min(r.height - 24, start.y - r.top))}px`;
+        }
         try {
           el.setPointerCapture(e.pointerId);
         } catch {
