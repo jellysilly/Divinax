@@ -1,6 +1,6 @@
 import { tr } from './i18n';
 // Клиенты API: Chat Completion (OpenAI-совместимые, Claude), Text Completion, KoboldAI, AI Horde, NovelAI.
-import type { ApiSettings, ChatSource, GenPreset, MainApi, Role, TextSource } from '../types';
+import type { ApiSettings, ChatSource, ConnectionProfile, GenPreset, MainApi, Role, TextSource } from '../types';
 import { sleep } from './util';
 
 export interface ChatMsg {
@@ -78,6 +78,18 @@ export function modelKey(api: ApiSettings): string {
 }
 
 export const currentModel = (api: ApiSettings) => api.models[modelKey(api)] ?? '';
+
+/** Настройки API, как если бы был применён профиль (model — замена модели профиля). */
+export function apiForProfile(api: ApiSettings, p: ConnectionProfile, model?: string): ApiSettings {
+  const next = { ...api, main: p.main, chatSource: p.chatSource, textSource: p.textSource };
+  const urls = { ...next.urls };
+  if (p.url) {
+    if (p.main === 'text') urls[p.textSource] = p.url;
+    else if (p.main === 'kobold') urls.kobold = p.url;
+    else if (p.chatSource === 'custom') urls.custom = p.url;
+  }
+  return { ...next, urls, models: { ...next.models, [modelKey(next)]: model || p.model } };
+}
 
 function chatEndpoint(api: ApiSettings): { base: string; key: string } {
   const proxy = api.proxies.find((p) => p.id === api.proxyPresetId);

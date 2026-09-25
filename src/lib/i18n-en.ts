@@ -1028,6 +1028,10 @@ export const EN: Record<string, string> = {
   'Часть изменений в расширениях вступит в силу после перезагрузки страницы.': 'Some extension changes take effect after reloading the page.',
   'Перезагрузить': 'Reload',
   'Сторонние расширения': 'Third-party extensions',
+  'рекомендуем': 'recommended',
+  'Режиссёр сцены: отдельная модель следит за ролевой игрой, иногда подбрасывает события (не управляя персонажами) и комментирует происходящее на полях.':
+    'Scene director: a separate model watches the role-play, occasionally throws in events (never controlling the characters) and comments in the margins.',
+  'Пустой запрос': 'Empty request',
   'Их настройки': 'Their settings',
   'Открыть страницу расширения': 'Open extension page',
   'Проверить обновления': 'Check for updates',

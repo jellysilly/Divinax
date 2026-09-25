@@ -95,6 +95,7 @@ export interface Message {
   images?: string[];
   translation?: string; // перевод для отображения
   expression?: string; // эмоция для спрайтов
+  stExtra?: Record<string, unknown>; // поля extra из SillyTavern, которых нет у Divinax (данные расширений)
 }
 
 export interface AuthorNote {

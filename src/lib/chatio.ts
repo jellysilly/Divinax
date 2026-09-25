@@ -54,6 +54,7 @@ export function chatToJsonl(s: State, c: Chat): string {
     character_name: c.ownerType === 'group' ? 'unused' : ownerName(s, c),
     create_date: stDate(c.createdAt),
     chat_metadata: {
+      ...(c.stMeta ?? {}),
       note_prompt: an.text,
       note_interval: an.enabled ? Math.max(1, an.interval) : 0,
       note_position: AN_POSITION[an.position],
@@ -67,11 +68,24 @@ export function chatToJsonl(s: State, c: Chat): string {
   return [JSON.stringify(header), ...c.messages.map((m) => JSON.stringify(toStMessage(s, c, m)))].join('\n');
 }
 
+/** Ключи extra, которые Divinax хранит в своих полях сообщения; всё остальное живёт в Message.stExtra. */
+const OWN_EXTRA = new Set(['type', 'reasoning', 'display_text', 'gen_time', 'token_count', 'model', 'image', 'inline_image']);
+
+/** extra сообщения ST без полей, которые Divinax хранит сам (undefined, если ничего не осталось). */
+export function foreignExtra(extra: unknown): Record<string, unknown> | undefined {
+  if (!extra || typeof extra !== 'object') return undefined;
+  const rest = Object.fromEntries(Object.entries(extra as Record<string, unknown>).filter(([k, v]) => !OWN_EXTRA.has(k) && v !== undefined));
+  return Object.keys(rest).length ? JSON.parse(JSON.stringify(rest)) : undefined;
+}
+
+/** Ключи chat_metadata, которые Divinax разбирает сам; остальное — данные расширений (Chat.stMeta). */
+const OWN_META = new Set(['note_prompt', 'note_interval', 'note_position', 'note_depth', 'note_role', 'variables', 'world_info', 'divinax']);
+
 /** Сообщение в формате SillyTavern (строка JSONL и элемент context.chat для расширений). */
 export function toStMessage(s: State, c: Chat, m: Message): Record<string, unknown> {
   const ch = m.charId ? s.characters[m.charId] : undefined;
   const iso = new Date(m.date).toISOString();
-  const extra: Record<string, unknown> = {};
+  const extra: Record<string, unknown> = structuredClone(m.stExtra ?? {});
   if (m.isSystem) extra.type = 'narrator';
   if (m.reasoning) extra.reasoning = m.reasoning;
   if (m.translation) extra.display_text = m.translation;
@@ -139,6 +153,7 @@ interface RawMsg {
   translation?: string;
   genTime?: number;
   images?: string[];
+  stExtra?: Record<string, unknown>;
 }
 
 export interface ParsedChat {
@@ -180,6 +195,7 @@ function fromStLine(j: any): RawMsg | null {
     translation: j.extra?.display_text || undefined,
     genTime: j.extra?.gen_time,
     images: typeof img === 'string' && /^(data:image\/|https?:)/.test(img) ? [img] : undefined,
+    stExtra: foreignExtra(j.extra),
   };
 }
 
@@ -328,6 +344,8 @@ export function buildChat(s: State, p: ParsedChat, owner: Owner): Chat {
     chat.vars = Object.fromEntries(Object.entries(meta.variables).map(([k, v]) => [k, typeof v === 'string' ? v : JSON.stringify(v)]));
   }
   if (meta.divinax?.summary) chat.summary = str(meta.divinax.summary);
+  const stMeta = Object.fromEntries(Object.entries(meta).filter(([k]) => !OWN_META.has(k)));
+  if (Object.keys(stMeta).length) chat.stMeta = stMeta;
   // лорбуки чата: по названию среди уже импортированных
   const bookNames: string[] = [...(Array.isArray(meta.divinax?.lorebooks) ? meta.divinax.lorebooks : []), ...(meta.world_info ? [meta.world_info] : [])].map(str);
   const books = Object.values(s.lorebooks);
@@ -353,6 +371,7 @@ export function buildChat(s: State, p: ParsedChat, owner: Owner): Chat {
       translation: r.translation,
       genTime: r.genTime,
       images: r.images,
+      stExtra: r.stExtra,
     });
   }
   const last = chat.messages[chat.messages.length - 1];

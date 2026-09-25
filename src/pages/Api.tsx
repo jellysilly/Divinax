@@ -4,7 +4,7 @@ import { Check, Eye, EyeOff, KeyRound, Layers, Plug, Plus, RefreshCw, Send, Tras
 import { getState, setState, toast, useStore } from '../store';
 import type { ApiSettings, ChatSource, ConnectionProfile, MainApi, TextSource } from '../types';
 import { Divider, Field, IconBtn, LazyInput, Panel, Select, Seg, Star, Switch } from '../components/ui';
-import { CHAT_SOURCES, MAIN_API_LABELS, NOVEL_MODELS, TEXT_SOURCES, currentModel, generate, modelKey, sourceName } from '../lib/api';
+import { CHAT_SOURCES, MAIN_API_LABELS, NOVEL_MODELS, TEXT_SOURCES, apiForProfile, currentModel, generate, modelKey, sourceName } from '../lib/api';
 import { connect, disconnect, modelInfo } from '../lib/connection';
 import { activePreset } from '../store';
 import { uid } from '../lib/util';
@@ -295,16 +295,8 @@ function ProfilesPanel() {
 
   const apply = (p: ConnectionProfile) => {
     setState((s) => {
-      const api = { ...s.api, main: p.main, chatSource: p.chatSource, textSource: p.textSource };
-      const mk = modelKey(api);
-      const urls = { ...api.urls };
-      if (p.url) {
-        if (p.main === 'text') urls[p.textSource] = p.url;
-        else if (p.main === 'kobold') urls.kobold = p.url;
-        else if (p.chatSource === 'custom') urls.custom = p.url;
-      }
       return {
-        api: { ...api, urls, models: { ...api.models, [mk]: p.model } },
+        api: apiForProfile(s.api, p),
         activeProfileId: p.id,
         activePresetId: p.presetId && s.presets.some((x) => x.id === p.presetId) ? p.presetId : s.activePresetId,
         format: {

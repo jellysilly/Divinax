@@ -431,7 +431,7 @@ function Messages({ chat }: { chat: Chat }) {
     }
 
   return (
-    <div ref={ref} onScroll={onScroll} className={`messages scroll ${style} ${style === 'document' ? 'doc' : ''}`}>
+    <div ref={ref} id="chat" onScroll={onScroll} className={`messages scroll ${style} ${style === 'document' ? 'doc' : ''}`}>
       {start > 0 && (
         <button type="button" className="btn sm" style={{ alignSelf: 'center' }} onClick={() => setLimit((l) => l + 60)}>
           {tr('Показать ранние сообщения ({0})', start)}

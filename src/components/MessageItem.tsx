@@ -113,13 +113,17 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
     selected ? 'selected' : '',
   ].join(' ');
 
+  // разметка как в SillyTavern (.mes[mesid] > .mes_block > .mes_text) — по ней сторонние расширения находят сообщения
+  const stAttrs: Record<string, string> = { mesid: String(index), is_user: String(m.isUser), is_system: String(m.hidden), ch_name: m.name };
+
   return (
     <article
       ref={articleRef}
-      className={cls + (gestures ? ' gest' : '')}
+      className={cls + ' mes' + (gestures ? ' gest' : '')}
       onClick={selecting ? toggleSelect : undefined}
       style={selecting ? { cursor: 'pointer' } : undefined}
       data-mid={m.id}
+      {...stAttrs}
     >
       {gestures && (
         <div ref={hintRef} className="swipe-hint" aria-hidden="true">
@@ -130,7 +134,7 @@ function MessageItemInner({ chatId, m, index, isLast, isLastChar }: Props) {
         </div>
       )}
       {!m.isSystem && <Avatar src={avatar} name={m.name} glow={!m.isUser} />}
-      <div className="msg-body">
+      <div className="msg-body mes_block">
         <div className="msg-head">
           <span className="msg-name">{m.name}</span>
           {m.isUser && <span className="tag">{tr('вы')}</span>}

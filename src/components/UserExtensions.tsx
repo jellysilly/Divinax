@@ -27,6 +27,15 @@ export function DomSlot({ ids, className, onEmpty }: { ids: string[]; className?
   return <div ref={ref} className={className} />;
 }
 
+/** Расширения, написанные с расчётом на Divinax: ставятся одной кнопкой (с тем же предупреждением). */
+const RECOMMENDED = [
+  {
+    repo: 'jellysilly/Lara-director',
+    name: 'Lara Director',
+    about: 'Режиссёр сцены: отдельная модель следит за ролевой игрой, иногда подбрасывает события (не управляя персонажами) и комментирует происходящее на полях.',
+  },
+];
+
 const SETTINGS_IDS = ['extensions_settings', 'extensions_settings2'];
 const MENU_IDS = ['extensionsMenu'];
 
@@ -142,6 +151,33 @@ export function UserExtensionsPanel() {
           {tr('Можно указать github.com/автор/репозиторий, ссылку на ветку или подпапку (…/tree/ветка/папка) или прямую ссылку на папку с manifest.json. Divinax повторяет основное API SillyTavern (getContext, события, slash-команды, настройки, всплывающие окна, вставки в промпт), но расширения, которые перестраивают интерфейс таверны, могут работать частично.')}
         </span>
       </Panel>
+
+      {RECOMMENDED.filter((r) => !exts.some((x) => x.github && `${x.github.owner}/${x.github.repo}`.toLowerCase() === r.repo.toLowerCase())).map((r) => (
+        <div key={r.repo} className="ext-card" style={{ flex: 'none' }}>
+          <div className="row" style={{ gap: 12 }}>
+            <span className="ico">
+              <Puzzle size={18} />
+            </span>
+            <span className="h3 grow ellipsis">{r.name}</span>
+            <span className="tag">{tr('рекомендуем')}</span>
+          </div>
+          <p>{tr(r.about)}</p>
+          <div className="row" style={{ justifyContent: 'flex-end', gap: 6 }}>
+            <IconBtn size="sm" icon={<ExternalLink size={14} />} label={tr('Открыть страницу расширения')} onClick={() => window.open(`https://github.com/${r.repo}`, '_blank', 'noopener')} />
+            <button
+              type="button"
+              className="btn sm primary"
+              disabled={busy === 'install'}
+              onClick={() => {
+                setUrl(`https://github.com/${r.repo}`);
+                setConfirming(true);
+              }}
+            >
+              <Download size={15} /> {tr('Установить')}
+            </button>
+          </div>
+        </div>
+      ))}
 
       {needReload && (
         <div className="dx-warn">

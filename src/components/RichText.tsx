@@ -114,9 +114,9 @@ function RichTextInner({ text, streaming }: { text: string; streaming?: boolean 
   }, [out, streaming]);
 
   if (!out.rich) {
-    return <div className={`msg-text ${streaming ? 'cursor' : ''}`} dangerouslySetInnerHTML={{ __html: out.html || renderMessage(text) }} />;
+    return <div className={`msg-text mes_text ${streaming ? 'cursor' : ''}`} dangerouslySetInnerHTML={{ __html: out.html || renderMessage(text) }} />;
   }
-  return <div ref={ref} className="msg-text rich" />;
+  return <div ref={ref} className="msg-text mes_text rich" />;
 }
 
 export const RichText = memo(RichTextInner);

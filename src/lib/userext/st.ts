@@ -6,9 +6,10 @@ import type { Chat, Message } from '../../types';
 import { activeChat, activePreset, currentPersona, getState, setState, toast, updateChat, userName } from '../../store';
 import { eventSource, event_types } from './events';
 import { EXT_PROMPT_ROLES, EXT_PROMPT_TYPES, extensionPrompts, setExtensionPrompt } from '../extprompts';
-import { toStMessage } from '../chatio';
+import { foreignExtra, parseStDate, toStMessage } from '../chatio';
 import { makeMessage } from '../chats';
 import { quietGenerate, sendMessage, stopGeneration } from '../generate';
+import { ConnectionManagerRequestService, rawGenerate, stProfiles, toChatMsgs } from './requests';
 import { lastPipe, registerCommand, runSlash } from '../slash';
 import { substituteMacros } from '../macros';
 import { macroEnv } from '../prompt';
@@ -22,6 +23,15 @@ export const extBases = new Map<string, string>();
 // ── extension_settings ──
 
 export const extension_settings: Record<string, any> = {};
+// профили подключений Divinax в том виде, в каком расширения ST читают их у Connection Manager;
+// неперечисляемые — не сохраняются вместе с настройками расширений
+Object.defineProperty(extension_settings, 'connectionManager', {
+  enumerable: false,
+  configurable: true,
+  get: () => ({ selectedProfile: getState().activeProfileId || null, profiles: stProfiles() }),
+  set: () => undefined,
+});
+Object.defineProperty(extension_settings, 'disabledExtensions', { enumerable: false, configurable: true, get: () => [], set: () => undefined });
 let settingsLoaded = false;
 
 export function loadExtensionSettings() {
@@ -45,6 +55,11 @@ function saveSettingsNow() {
 
 // ── Живые данные чата в формате ST ──
 
+// Объекты сообщений ST живут, пока не изменилось само сообщение Divinax: расширения могут держать ссылки на них.
+const stObjects = new WeakMap<Message, Record<string, any>>();
+// объект ST → id сообщения Divinax (по нему saveChat находит, что поменялось, добавилось и удалилось)
+const stIds = new WeakMap<object, string>();
+
 let chatCache: { chat?: Chat; arr: Record<string, any>[]; ids: string[] } = { arr: [], ids: [] };
 
 function liveChat(): Record<string, any>[] {
@@ -52,38 +67,97 @@ function liveChat(): Record<string, any>[] {
   const c = activeChat(s);
   if (!c) return (chatCache = { arr: [], ids: [] }).arr;
   if (chatCache.chat === c) return chatCache.arr;
-  chatCache = { chat: c, arr: c.messages.map((m) => toStMessage(s, c, m)), ids: c.messages.map((m) => m.id) };
-  return chatCache.arr;
+  const arr = c.messages.map((m) => {
+    let o = stObjects.get(m);
+    if (!o) {
+      o = toStMessage(s, c, m);
+      stObjects.set(m, o);
+      stIds.set(o, m.id);
+    }
+    return o;
+  });
+  chatCache = { chat: c, arr, ids: c.messages.map((m) => m.id) };
+  return arr;
 }
 
-/** Переносит правки расширения в context.chat обратно в Divinax. */
+const isNarrator = (st: Record<string, any>) => st.extra?.type === 'narrator' && !st.is_user;
+
+/** Новое сообщение Divinax из объекта ST, который расширение добавило в context.chat. */
+function messageFromSt(c: Chat, st: Record<string, any>): Message {
+  const s = getState();
+  const mes = typeof st.mes === 'string' ? st.mes : '';
+  const name = String(st.name ?? '');
+  const narrator = isNarrator(st);
+  const m = makeMessage({ text: mes, name, isUser: Boolean(st.is_user) });
+  if (narrator) m.isSystem = true;
+  m.hidden = Boolean(st.is_system);
+  m.date = parseStDate(st.send_date) ?? m.date;
+  m.swipeInfo = [{ date: m.date }];
+  m.stExtra = foreignExtra(st.extra);
+  if (!m.isUser && !narrator) {
+    const members = c.ownerType === 'group' ? (s.groups[c.ownerId]?.members ?? []) : [c.ownerId];
+    m.charId = members.find((id) => s.characters[id]?.name === name) ?? (c.ownerType === 'char' ? c.ownerId : undefined);
+  }
+  return m;
+}
+
+/** Переносит правки расширения в context.chat обратно в Divinax: изменения, новые и удалённые сообщения. */
 function saveChat() {
   const { chat, arr, ids } = chatCache;
   if (!chat) return Promise.resolve();
   updateChat(chat.id, (c) => {
-    arr.forEach((st, i) => {
-      const id = ids[i];
+    const present = new Set(arr.map((st) => (st && typeof st === 'object' ? stIds.get(st) : undefined)).filter(Boolean));
+    // удаляем только то, что было в снимке и исчезло из массива; сообщения, пришедшие позже, не трогаем
+    const removed = new Set(ids.filter((id) => !present.has(id)));
+    if (removed.size) c.messages = c.messages.filter((m) => !removed.has(m.id));
+    let prevId: string | undefined;
+    for (const st of arr) {
+      if (!st || typeof st !== 'object') continue;
+      const id = stIds.get(st);
       const idx = id ? c.messages.findIndex((x) => x.id === id) : -1;
-      const mes = typeof st.mes === 'string' ? st.mes : '';
       if (idx < 0) {
-        // расширение добавило сообщение через chat.push
-        const nm: Message = makeMessage({ text: mes, name: String(st.name ?? ''), isUser: Boolean(st.is_user) });
-        nm.hidden = Boolean(st.is_system);
-        c.messages.push(nm);
-        ids[i] = nm.id;
-        return;
+        // расширение добавило сообщение (push или splice) — ставим его после предыдущего известного
+        const nm = messageFromSt(c, st);
+        const at = prevId ? c.messages.findIndex((x) => x.id === prevId) + 1 : 0;
+        c.messages.splice(at > 0 ? at : prevId ? c.messages.length : 0, 0, nm);
+        stIds.set(st, nm.id);
+        stObjects.set(nm, st);
+        prevId = nm.id;
+        continue;
       }
+      prevId = id;
       const m = c.messages[idx];
+      const mes = typeof st.mes === 'string' ? st.mes : '';
       const shown = typeof st.extra?.display_text === 'string' && st.extra.display_text ? st.extra.display_text : undefined;
       const hidden = Boolean(st.is_system);
-      if (m.text === mes && m.translation === shown && m.hidden === hidden) return;
+      const stExtra = foreignExtra(st.extra);
+      const name = typeof st.name === 'string' && st.name ? st.name : m.name;
+      if (m.text === mes && m.translation === shown && m.hidden === hidden && m.name === name && JSON.stringify(m.stExtra ?? null) === JSON.stringify(stExtra ?? null))
+        continue;
       // сообщения в хранилище неизменяемые — заменяем объект целиком
       const swipes = [...m.swipes];
       swipes[m.swipeId] = mes;
-      c.messages[idx] = { ...m, text: mes, swipes, translation: shown, hidden };
-    });
+      const next: Message = { ...m, text: mes, swipes, translation: shown, hidden, name, stExtra };
+      c.messages[idx] = next;
+      stObjects.set(next, st);
+    }
   });
+  chatCache.ids = arr.map((st) => (st && typeof st === 'object' ? stIds.get(st) : undefined)).filter((x): x is string => Boolean(x));
   return Promise.resolve();
+}
+
+/** deleteMessage(индекс) из ST: удаляет сообщение открытого чата. */
+async function deleteMessage(index: number | string) {
+  const c = activeChat(getState());
+  const m = c?.messages[Number(index)];
+  if (!c || !m) return;
+  updateChat(c.id, (cc) => void (cc.messages = cc.messages.filter((x) => x.id !== m.id)));
+  await eventSource.emit(event_types.MESSAGE_DELETED, c.messages.length - 1);
+}
+
+async function deleteLastMessage() {
+  const c = activeChat(getState());
+  if (c?.messages.length) await deleteMessage(c.messages.length - 1);
 }
 
 function liveArray(get: () => any[]): any[] {
@@ -173,10 +247,17 @@ async function generateQuietPrompt(arg: unknown): Promise<string> {
   return (await quietGenerate(prompt)) ?? '';
 }
 
-async function generateRaw(arg: unknown): Promise<string> {
-  const o = typeof arg === 'object' && arg ? (arg as any) : { prompt: arg };
-  const p = Array.isArray(o.prompt) ? o.prompt.map((m: any) => m.content ?? '').join('\n\n') : String(o.prompt ?? '');
-  return (await quietGenerate([o.systemPrompt, p].filter(Boolean).join('\n\n'))) ?? '';
+/** generateRaw из ST: отдельный запрос без промпта чата (объект или старые позиционные аргументы). */
+async function generateRaw(arg: unknown, ...rest: unknown[]): Promise<string> {
+  const o: Record<string, any> =
+    typeof arg === 'object' && arg && !Array.isArray(arg) ? (arg as Record<string, any>) : { prompt: arg, systemPrompt: rest[3], responseLength: rest[4] };
+  const messages = [
+    ...(o.systemPrompt ? [{ role: 'system' as const, content: String(o.systemPrompt) }] : []),
+    ...toChatMsgs(o.prompt),
+    ...(o.prefill ? [{ role: 'assistant' as const, content: String(o.prefill) }] : []),
+  ];
+  const res = await rawGenerate({ messages, maxTokens: Number(o.responseLength) || undefined });
+  return (o.prefill ? String(o.prefill) : '') + res.text;
 }
 
 // ── Всплывающие окна (popup.js) ──
@@ -492,6 +573,9 @@ export function getContext(): Record<string, any> {
     updateMessageBlock: () => undefined,
     generateQuietPrompt,
     generateRaw,
+    ConnectionManagerRequestService,
+    deleteMessage,
+    deleteLastMessage,
     sendMessageAsUser: (text: string) => sendMessage(String(text), { generate: false }),
     sendSystemMessage: (_type: unknown, text: string) => sendMessage(String(text), { generate: false, asSystem: true }),
     stopGeneration: () => (stopGeneration(), true),
@@ -588,6 +672,8 @@ export function exportsTable(): Record<string, unknown> {
     substituteParamsExtended: substituteParams,
     generateQuietPrompt,
     generateRaw,
+    deleteMessage,
+    deleteLastMessage,
     sendMessageAsUser: (text: string) => sendMessage(String(text), { generate: false }),
     sendSystemMessage: (_t: unknown, text: string) => sendMessage(String(text), { generate: false, asSystem: true }),
     chat: liveArray(liveChat),
@@ -628,6 +714,8 @@ export function exportsTable(): Record<string, unknown> {
     modules: [],
     writeExtensionField: getContext().writeExtensionField,
     loadExtensionSettings: async () => undefined,
+    // extensions/shared.js
+    ConnectionManagerRequestService,
     // popup.js
     callGenericPopup,
     Popup,
